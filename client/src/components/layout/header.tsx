@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -5,9 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, Zap, ShoppingCart, User, LogOut, BarChart3, Package, Settings, Store, Shield, LayoutDashboard } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import ShoppingCartSidebar from "@/components/shopping-cart";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function Header() {
   const [location, setLocation] = useLocation();
@@ -24,17 +25,67 @@ export default function Header() {
     mutationFn: () => apiRequest("/api/auth/logout", { method: "POST" }),
     onSuccess: () => {
       logout();
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       toast({
         title: "Logged out successfully",
       });
     },
   });
 
-  const [isCartOpen, setIsCartOpen] = useState(false);
+  const cartItemCount = cartItems?.length || 0;
 
-  if (!user) {
-}
+  const navigation = [
+    { name: "Marketplace", href: "/marketplace" },
+    { name: "Installers", href: "/installers" },
+    { name: "Learn", href: "#" },
+    { name: "Support", href: "#" },
+  ];
+
+  const getDashboardPath = () => {
+    switch (user?.role) {
+      case 'vendor':
+        return '/vendor-dashboard';
+      case 'admin':
+        return '/admin-dashboard';
+      default:
+        return '/buyer-dashboard';
+    }
+  };
+
+  const getDashboardIcon = () => {
+    switch (user?.role) {
+      case 'vendor':
+        return <Store className="w-4 h-4" />;
+      case 'admin':
+        return <Shield className="w-4 h-4" />;
+      default:
+        return <LayoutDashboard className="w-4 h-4" />;
+    }
+  };
+
+  const getDashboardLabel = () => {
+    switch (user?.role) {
+      case 'vendor':
+        return 'Vendor Dashboard';
+      case 'admin':
+        return 'Admin Dashboard';
+      default:
+        return 'Dashboard';
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      logoutMutation.mutate();
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast({
+        title: "Error",
+        description: "Logout failed",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <header className="bg-white shadow-sm border-b sticky top-0 z-50">
