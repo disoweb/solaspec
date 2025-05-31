@@ -18,19 +18,7 @@ export default function Marketplace() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   const { data: products, isLoading } = useQuery({
-    queryKey: ["/api/products", { 
-      search: searchTerm,
-      type: selectedType,
-      minPrice: minPrice ? Number(minPrice) : undefined,
-      maxPrice: maxPrice ? Number(maxPrice) : undefined,
-    }],
-    queryKey: [
-      "/api/products",
-      searchTerm ? `?search=${encodeURIComponent(searchTerm)}` : "",
-      selectedType ? `${searchTerm ? "&" : "?"}type=${selectedType}` : "",
-      minPrice ? `${searchTerm || selectedType ? "&" : "?"}minPrice=${minPrice}` : "",
-      maxPrice ? `${searchTerm || selectedType || minPrice ? "&" : "?"}maxPrice=${maxPrice}` : "",
-    ].filter(Boolean).join(""),
+    queryKey: ["/api/products", searchTerm, selectedType, minPrice, maxPrice]
   });
 
   const handleSearch = (value: string) => {

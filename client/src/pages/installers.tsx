@@ -16,11 +16,7 @@ export default function Installers() {
   const [verifiedOnly, setVerifiedOnly] = useState<boolean>(true);
 
   const { data: installers, isLoading } = useQuery({
-    queryKey: ["/api/installers", { verified: verifiedOnly }],
-    queryKey: [
-      "/api/installers",
-      verifiedOnly ? "?verified=true" : "",
-    ].filter(Boolean).join(""),
+    queryKey: ["/api/installers", verifiedOnly, selectedLocation]
   });
 
   const handleSearch = (value: string) => {
