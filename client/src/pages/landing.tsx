@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Star, Zap, Shield, Clock, CheckCircle, Users, Award, ArrowRight } from "lucide-react";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
-import Link from "next/link";
+import { Link } from "wouter";
 
 export default function Landing() {
   const featuredProducts = [
@@ -635,12 +635,16 @@ export default function Landing() {
             Join thousands of satisfied customers who have made the switch to clean, affordable solar energy with Solaspec's trusted platform.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white" asChild>
-                  <Link href="/marketplace">Browse Solar Systems</Link>
-                </Button>
-                <Button size="lg" variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50" asChild>
-                  <Link href="/register">Become a Vendor</Link>
-                </Button>
+                <Link href="/marketplace">
+                  <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white">
+                    Browse Solar Systems
+                  </Button>
+                </Link>
+                <Link href="/register">
+                  <Button size="lg" variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50">
+                    Become a Vendor
+                  </Button>
+                </Link>
               </div>
         </div>
       </section>

@@ -20,64 +20,21 @@ export default function Header() {
     enabled: !!user,
   });
 
-  const cartItemCount = cartItems?.length || 0;
-
-  const navigation = [
-    { name: "Marketplace", href: "/marketplace" },
-    { name: "Installers", href: "/installers" },
-    { name: "Learn", href: "#" },
-    { name: "Support", href: "#" },
-  ];
-
-  const getDashboardPath = () => {
-    switch (user?.role) {
-      case 'vendor':
-        return '/vendor-dashboard';
-      case 'admin':
-        return '/admin-dashboard';
-      default:
-        return '/buyer-dashboard';
-    }
-  };
-
-  const getDashboardIcon = () => {
-    switch (user?.role) {
-      case 'vendor':
-        return <Store className="w-4 h-4" />;
-      case 'admin':
-        return <Shield className="w-4 h-4" />;
-      default:
-        return <LayoutDashboard className="w-4 h-4" />;
-    }
-  };
-
-  const getDashboardLabel = () => {
-    switch (user?.role) {
-      case 'vendor':
-        return 'Vendor Dashboard';
-      case 'admin':
-        return 'Admin Dashboard';
-      default:
-        return 'Dashboard';
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await logout();
+  const logoutMutation = useMutation({
+    mutationFn: () => apiRequest("/api/auth/logout", { method: "POST" }),
+    onSuccess: () => {
+      logout();
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       toast({
-        title: "Success",
-        description: "Logged out successfully",
+        title: "Logged out successfully",
       });
-    } catch (error) {
-      console.error('Logout error:', error);
-      toast({
-        title: "Error",
-        description: "Logout failed",
-        variant: "destructive",
-      });
-    }
-  };
+    },
+  });
+
+  const [isCartOpen, setIsCartOpen] = useState(false);
+
+  if (!user) {
+}
 
   return (
     <header className="bg-white shadow-sm border-b sticky top-0 z-50">

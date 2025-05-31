@@ -42,8 +42,8 @@ export default function Footer() {
             <ul className="space-y-2 text-gray-400">
               <li>
                 <Link href="/marketplace" className="text-muted-foreground hover:text-foreground transition-colors">
-                    Browse Systems
-                  </Link>
+                  Browse Systems
+                </Link>
               </li>
               <li>
                 <a href="#" className="hover:text-white transition-colors">Solar Calculators</a>
