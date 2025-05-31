@@ -49,7 +49,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create user
       const [newUser] = await db.insert(users).values({
-        id: crypto.randomUUID(),
         email,
         password: hashedPassword,
         firstName,

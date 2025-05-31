@@ -96,7 +96,7 @@ export const installers = pgTable("installers", {
 // Orders table
 export const orders = pgTable("orders", {
   id: uuid("id").primaryKey().defaultRandom(),
-  buyerId: varchar("buyer_id").notNull().references(() => users.id),
+  buyerId: integer("buyer_id").notNull().references(() => users.id),
   vendorId: integer("vendor_id").notNull().references(() => vendors.id),
   productId: integer("product_id").notNull().references(() => products.id),
   installerId: integer("installer_id").references(() => installers.id),
@@ -138,7 +138,7 @@ export const walletTransactions = pgTable("wallet_transactions", {
 // Reviews table
 export const reviews = pgTable("reviews", {
   id: serial("id").primaryKey(),
-  userId: varchar("user_id").notNull().references(() => users.id),
+  userId: integer("user_id").notNull().references(() => users.id),
   productId: integer("product_id").references(() => products.id),
   installerId: integer("installer_id").references(() => installers.id),
   vendorId: integer("vendor_id").references(() => vendors.id),
