@@ -151,7 +151,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/vendors', authenticate, async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.id;
       const user = await storage.getUser(userId);
       
       if (user?.role !== 'vendor') {
@@ -174,9 +174,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/vendors/profile', authenticate, async (req: any, res) => {
+  app.get('/api/vendors/profile', authenticate, async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.id;
       const vendor = await storage.getVendorByUserId(userId);
       if (!vendor) {
         return res.status(404).json({ message: "Vendor profile not found" });
@@ -202,9 +202,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/installers', authenticate, async (req: any, res) => {
+  app.post('/api/installers', authenticate, async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.id;
       
       const installerData = insertInstallerSchema.parse({
         ...req.body,
@@ -223,9 +223,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Cart routes
-  app.get('/api/cart', authenticate, async (req: any, res) => {
+  app.get('/api/cart', authenticate, async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.id;
       const cartItems = await storage.getCartItems(userId);
       res.json(cartItems);
     } catch (error) {
@@ -234,9 +234,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/cart', authenticate, async (req: any, res) => {
+  app.post('/api/cart', authenticate, async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.id;
       const cartItemData = insertCartItemSchema.parse({
         ...req.body,
         userId,
@@ -282,9 +282,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Order routes
-  app.get('/api/orders', authenticate, async (req: any, res) => {
+  app.get('/api/orders', authenticate, async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.id;
       const user = await storage.getUser(userId);
       
       if (user?.role === 'vendor') {
@@ -303,9 +303,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/orders', authenticate, async (req: any, res) => {
+  app.post('/api/orders', authenticate, async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.id;
       
       const orderData = insertOrderSchema.parse({
         ...req.body,
@@ -335,10 +335,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/orders/:id', authenticate, async (req: any, res) => {
+  app.put('/api/orders/:id', authenticate, async (req: AuthenticatedRequest, res) => {
     try {
       const orderId = req.params.id;
-      const userId = req.user.claims.sub;
+      const userId = req.user!.id;
       const user = await storage.getUser(userId);
       
       const order = await storage.getOrder(orderId);
@@ -365,9 +365,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Review routes
-  app.post('/api/reviews', authenticate, async (req: any, res) => {
+  app.post('/api/reviews', authenticate, async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.id;
       
       const reviewData = insertReviewSchema.parse({
         ...req.body,
@@ -397,9 +397,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Analytics routes
-  app.get('/api/analytics/vendor', authenticate, async (req: any, res) => {
+  app.get('/api/analytics/vendor', authenticate, async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.id;
       const user = await storage.getUser(userId);
       
       if (user?.role !== 'vendor') {
@@ -419,9 +419,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/analytics/admin', authenticate, async (req: any, res) => {
+  app.get('/api/analytics/admin', authenticate, async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.id;
       const user = await storage.getUser(userId);
       
       if (user?.role !== 'admin') {
@@ -437,9 +437,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Wallet routes
-  app.get('/api/wallet/balance', authenticate, async (req: any, res) => {
+  app.get('/api/wallet/balance', authenticate, async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.id;
       const balance = await storage.getWalletBalance(userId);
       res.json({ balance });
     } catch (error) {
@@ -448,9 +448,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/wallet/transactions', authenticate, async (req: any, res) => {
+  app.get('/api/wallet/transactions', authenticate, async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.id;
       const transactions = await storage.getWalletTransactions(userId);
       res.json(transactions);
     } catch (error) {

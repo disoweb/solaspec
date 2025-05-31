@@ -84,21 +84,30 @@ export default function Landing() {
   const testimonials = [
     {
       name: "Jennifer Lee",
+      title: "Homeowner",
       location: "Sacramento, CA",
       comment: "SolarConnect made the entire process seamless. The escrow protection gave me peace of mind, and the installer they matched me with was professional and efficient. My energy bill dropped by 90%!",
-      image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=50&h=50&fit=crop&crop=face"
+      image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=50&h=50&fit=crop&crop=face",
+      savings: "$2,400/year saved",
+      systemSize: "8.5kW system"
     },
     {
       name: "Marcus Thompson",
-      location: "Austin, TX",
+      title: "Business Owner",
+      location: "Austin, TX", 
       comment: "As a business owner, I needed a reliable solar solution. The commercial system I purchased through SolarConnect has exceeded expectations. ROI was achieved in just 5 years!",
-      image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=50&h=50&fit=crop&crop=face"
+      image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=50&h=50&fit=crop&crop=face",
+      savings: "$45,000/year saved",
+      systemSize: "125kW system"
     },
     {
       name: "Lisa Chen",
+      title: "Family of 4",
       location: "Denver, CO",
       comment: "The installment payment option made solar accessible for our family. The platform's transparency and the quality of vendors exceeded our expectations. Highly recommend!",
-      image: "https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=50&h=50&fit=crop&crop=face"
+      image: "https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=50&h=50&fit=crop&crop=face",
+      savings: "$1,800/year saved",
+      systemSize: "6.2kW system"
     }
   ];
 
@@ -106,19 +115,51 @@ export default function Landing() {
     <div className="min-h-screen bg-background">
       <Header />
       
+      {/* Trust Banner */}
+      <section className="bg-green-50 border-b border-green-200 py-3">
+        <div className="max-w-7xl mx-auto container-mobile">
+          <div className="flex items-center justify-center space-x-6 text-sm text-green-800">
+            <div className="flex items-center space-x-2">
+              <Shield className="w-4 h-4" />
+              <span className="font-medium">SOC 2 Certified</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <CheckCircle className="w-4 h-4" />
+              <span className="font-medium">Better Business Bureau A+</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Award className="w-4 h-4" />
+              <span className="font-medium">NABCEP Certified Installers</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Users className="w-4 h-4" />
+              <span className="font-medium">10,000+ Happy Customers</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Hero Section */}
       <section className="solar-gradient py-12 lg:py-20">
         <div className="max-w-7xl mx-auto container-mobile">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="animate-fade-in">
-              <div className="flex items-center space-x-2 mb-4">
+              <div className="flex flex-wrap items-center gap-4 mb-6">
                 <Badge variant="secondary" className="bg-green-100 text-green-800 hover:bg-green-100">
-                  Trusted by 10,000+ Customers
+                  🏆 #1 Rated Solar Marketplace
                 </Badge>
                 <div className="flex items-center space-x-1">
-                  <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                  <span className="text-sm text-muted-foreground">4.9/5 Rating</span>
+                  <div className="flex">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
+                    ))}
+                  </div>
+                  <span className="text-sm font-semibold text-foreground">4.9/5</span>
+                  <span className="text-sm text-muted-foreground">(2,847 reviews)</span>
                 </div>
+                <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-100">
+                  $2.4B+ Solar Systems Sold
+                </Badge>
               </div>
               
               <h1 className="text-4xl lg:text-5xl font-bold text-foreground mb-6">
@@ -183,6 +224,31 @@ export default function Landing() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Customer Logos Section */}
+      <section className="py-12 bg-card border-b">
+        <div className="max-w-7xl mx-auto container-mobile">
+          <div className="text-center mb-8">
+            <p className="text-sm text-muted-foreground font-medium">TRUSTED BY LEADING ORGANIZATIONS</p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8 items-center opacity-60">
+            {[
+              "Tesla Energy",
+              "SunPower", 
+              "Enphase",
+              "LG Energy",
+              "Canadian Solar",
+              "First Solar"
+            ].map((company, index) => (
+              <div key={company} className="text-center">
+                <div className="h-12 bg-muted rounded-lg flex items-center justify-center">
+                  <span className="text-sm font-semibold text-muted-foreground">{company}</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -360,6 +426,49 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Security & Compliance Section */}
+      <section className="py-16 bg-muted/30">
+        <div className="max-w-7xl mx-auto container-mobile">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-foreground mb-4">Bank-Level Security & Compliance</h2>
+            <p className="text-xl text-muted-foreground">Your data and transactions are protected by industry-leading security</p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+            {[
+              {
+                icon: Shield,
+                title: "256-bit SSL Encryption",
+                description: "Military-grade encryption protects all data transfers"
+              },
+              {
+                icon: CheckCircle,
+                title: "SOC 2 Type II Certified",
+                description: "Independently audited security controls and processes"
+              },
+              {
+                icon: Award,
+                title: "PCI DSS Compliant",
+                description: "Highest standard for payment card data security"
+              },
+              {
+                icon: Users,
+                title: "GDPR & CCPA Compliant",
+                description: "Full compliance with privacy regulations"
+              }
+            ].map((item, index) => (
+              <Card key={item.title} className="p-6 text-center">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <item.icon className="w-8 h-8 text-blue-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">{item.title}</h3>
+                <p className="text-sm text-muted-foreground">{item.description}</p>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Payment & Escrow Section */}
       <section className="py-16 bg-background">
         <div className="max-w-7xl mx-auto container-mobile">
@@ -450,6 +559,25 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Statistics Section */}
+      <section className="py-16 bg-primary">
+        <div className="max-w-7xl mx-auto container-mobile">
+          <div className="grid md:grid-cols-4 gap-8 text-center text-white">
+            {[
+              { number: "10,000+", label: "Solar Systems Installed" },
+              { number: "$2.4B+", label: "Total Sales Volume" },
+              { number: "99.8%", label: "Customer Satisfaction" },
+              { number: "500+", label: "Certified Installers" }
+            ].map((stat, index) => (
+              <div key={stat.label} className="animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
+                <div className="text-4xl lg:text-5xl font-bold mb-2">{stat.number}</div>
+                <div className="text-lg text-blue-100">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Testimonials Section */}
       <section className="py-16 bg-muted/30">
         <div className="max-w-7xl mx-auto container-mobile">
@@ -465,8 +593,19 @@ export default function Landing() {
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
                   ))}
+                  <span className="ml-2 text-sm text-muted-foreground">Verified Purchase</span>
                 </div>
                 <p className="text-foreground mb-4">"{testimonial.comment}"</p>
+                <div className="bg-muted/50 p-3 rounded-lg mb-4">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Annual Savings:</span>
+                    <span className="font-semibold text-green-600">{testimonial.savings}</span>
+                  </div>
+                  <div className="flex justify-between text-sm mt-1">
+                    <span className="text-muted-foreground">System Size:</span>
+                    <span className="font-semibold">{testimonial.systemSize}</span>
+                  </div>
+                </div>
                 <div className="flex items-center space-x-3">
                   <img 
                     src={testimonial.image} 
@@ -475,6 +614,7 @@ export default function Landing() {
                   />
                   <div>
                     <p className="font-semibold text-foreground">{testimonial.name}</p>
+                    <p className="text-sm text-muted-foreground">{testimonial.title}</p>
                     <p className="text-sm text-muted-foreground">{testimonial.location}</p>
                   </div>
                 </div>

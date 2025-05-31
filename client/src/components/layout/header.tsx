@@ -153,20 +153,26 @@ export default function Header() {
                 </div>
 
                 {/* Logout */}
-                <Button variant="ghost" size="sm" asChild>
-                  <a href="/api/logout">
-                    <LogOut className="w-4 h-4" />
-                    <span className="hidden sm:ml-2 sm:block">Logout</span>
-                  </a>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={async () => {
+                    await fetch('/api/auth/logout', { method: 'POST' });
+                    queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+                    window.location.href = '/';
+                  }}
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span className="hidden sm:ml-2 sm:block">Logout</span>
                 </Button>
               </>
             ) : (
               <>
                 <Button variant="ghost" asChild>
-                  <a href="/api/login">Sign In</a>
+                  <Link href="/login">Sign In</Link>
                 </Button>
                 <Button asChild className="bg-primary hover:bg-primary/90">
-                  <a href="/api/login">Join as Vendor</a>
+                  <Link href="/register">Join as Vendor</Link>
                 </Button>
               </>
             )}
