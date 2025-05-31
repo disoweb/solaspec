@@ -130,6 +130,11 @@
       overflow-x: hidden;
     }
 
+    html, body {
+      max-width: 100vw;
+      overflow-x: hidden;
+    }
+
     /* Fix button text wrapping */
     .btn-mobile {
       white-space: nowrap;
@@ -140,6 +145,25 @@
     .grid-mobile-fix {
       grid-template-columns: 1fr !important;
       gap: 1rem !important;
+    }
+
+    /* Fix container widths */
+    .max-w-7xl {
+      max-width: 100vw !important;
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+    }
+
+    /* Fix any elements that might overflow */
+    * {
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+
+    /* Fix landing page sections */
+    .landing-section {
+      padding-left: 1rem;
+      padding-right: 1rem;
     }
   }
 

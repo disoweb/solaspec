@@ -86,7 +86,7 @@ export default function Landing() {
       name: "Jennifer Lee",
       title: "Homeowner",
       location: "Sacramento, CA",
-      comment: "SolarConnect made the entire process seamless. The escrow protection gave me peace of mind, and the installer they matched me with was professional and efficient. My energy bill dropped by 90%!",
+      comment: "Solaspec made the entire process seamless. The escrow protection gave me peace of mind, and the installer they matched me with was professional and efficient. My energy bill dropped by 90%!",
       image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=50&h=50&fit=crop&crop=face",
       savings: "$2,400/year saved",
       systemSize: "8.5kW system"
@@ -95,7 +95,7 @@ export default function Landing() {
       name: "Marcus Thompson",
       title: "Business Owner",
       location: "Austin, TX", 
-      comment: "As a business owner, I needed a reliable solar solution. The commercial system I purchased through SolarConnect has exceeded expectations. ROI was achieved in just 5 years!",
+      comment: "As a business owner, I needed a reliable solar solution. The commercial system I purchased through Solaspec has exceeded expectations. ROI was achieved in just 5 years!",
       image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=50&h=50&fit=crop&crop=face",
       savings: "$45,000/year saved",
       systemSize: "125kW system"
@@ -165,7 +165,7 @@ export default function Landing() {
               </div>
               
               <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-foreground mb-4 sm:mb-6">
-                Verified Solar Systems with <span className="solar-text">Escrow Protection</span>
+                Verified Solar Systems with <span className="text-blue-600">Escrow Protection</span>
               </h1>
               
               <p className="text-base sm:text-lg lg:text-xl text-muted-foreground mb-6 sm:mb-8">
@@ -325,7 +325,7 @@ export default function Landing() {
       <section className="py-16 bg-muted/30">
         <div className="max-w-7xl mx-auto container-mobile">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-foreground mb-4">How SolarConnect Works</h2>
+            <h2 className="text-3xl font-bold text-foreground mb-4">How Solaspec Works</h2>
             <p className="text-xl text-muted-foreground">Simple, secure, and transparent solar purchasing</p>
           </div>
           
@@ -631,7 +631,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto container-mobile text-center">
           <h2 className="text-3xl lg:text-4xl font-bold text-primary-foreground mb-4">Ready to Go Solar?</h2>
           <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-            Join thousands of satisfied customers who have made the switch to clean, affordable solar energy with SolarConnect's trusted platform.
+            Join thousands of satisfied customers who have made the switch to clean, affordable solar energy with Solaspec's trusted platform.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" variant="secondary" className="bg-white text-primary hover:bg-gray-100">

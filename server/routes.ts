@@ -20,6 +20,7 @@ import { eq, desc, sql, and, ilike, or, count } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { Request, Response } from "express";
+import crypto from "crypto";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
@@ -30,7 +31,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication routes
   app.post("/api/auth/register", async (req, res) => {
     try {
-      const { email, password, firstName, lastName, phone, role } = req.body;
+      const { email, password, firstName, lastName, role = "buyer" } = req.body;
+
+      // Validate input
+      if (!email || !password || !firstName || !lastName) {
+        return res.status(400).json({ message: "All fields are required" });
+      }
 
       // Check if user already exists
       const existingUser = await db.select().from(users).where(eq(users.email, email)).limit(1);
@@ -43,16 +49,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create user
       const [newUser] = await db.insert(users).values({
+        id: crypto.randomUUID(),
         email,
         password: hashedPassword,
         firstName,
         lastName,
-        phone: phone || null,
-        role: role || "buyer",
+        role,
       }).returning();
 
       // Generate JWT token
-      const token = jwt.sign({ userId: newUser.id }, JWT_SECRET, { expiresIn: "7d" });
+      const token = jwt.sign({ userId: newUser.id, email: newUser.email, role: newUser.role }, JWT_SECRET, { expiresIn: "7d" });
 
       // Set cookie
       res.cookie("auth-token", token, {
@@ -74,20 +80,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { email, password } = req.body;
 
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email and password are required" });
+      }
+
       // Find user
-      const user = await db.select().from(users).where(eq(users.email, email)).limit(1);
-      if (!user[0]) {
+      const [user] = await db.select().from(users).where(eq(users.email, email));
+      if (!user) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
       // Verify password
-      const isValidPassword = await bcrypt.compare(password, user[0].password);
+      const isValidPassword = await bcrypt.compare(password, user.password);
       if (!isValidPassword) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
       // Generate JWT token
-      const token = jwt.sign({ userId: user[0].id }, JWT_SECRET, { expiresIn: "7d" });
+      const token = jwt.sign(
+        { userId: user.id, email: user.email, role: user.role },
+        JWT_SECRET,
+        { expiresIn: "7d" }
+      );
 
       // Set cookie
       res.cookie("auth-token", token, {
@@ -97,7 +111,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       });
 
-      const { password: _, ...userWithoutPassword } = user[0];
+      const { password: _, ...userWithoutPassword } = user;
       res.json(userWithoutPassword);
     } catch (error) {
       console.error("Login error:", error);
