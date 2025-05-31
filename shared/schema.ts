@@ -28,7 +28,7 @@ export const sessions = pgTable(
 
 // User storage table with custom authentication
 export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
+  id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
   email: varchar("email").unique().notNull(),
   password: varchar("password").notNull(),
   firstName: varchar("first_name"),
@@ -46,7 +46,7 @@ export const users = pgTable("users", {
 
 // Vendors table
 export const vendors = pgTable("vendors", {
-  id: serial("id").primaryKey(),
+  id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
   userId: varchar("user_id").notNull().references(() => users.id),
   companyName: varchar("company_name").notNull(),
   businessLicense: varchar("business_license"),
@@ -60,7 +60,7 @@ export const vendors = pgTable("vendors", {
 
 // Products table
 export const products = pgTable("products", {
-  id: serial("id").primaryKey(),
+  id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
   vendorId: integer("vendor_id").notNull().references(() => vendors.id),
   name: varchar("name").notNull(),
   description: text("description"),
