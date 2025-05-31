@@ -389,10 +389,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const order = await storage.createOrder(orderData);
 
+      // Create escrow account for the order
+      const escrowData = {
+        orderId: order.id,
+        buyerId: userId,
+        vendorId: orderData.vendorId,
+        installerId: orderData.installerId,
+        totalAmount: orderData.totalAmount,
+        heldAmount: orderData.totalAmount,
+        status: 'created',
+      };
+
+      const escrowAccount = await storage.createEscrowAccount(escrowData);
+
+      // Create default installation milestones if installer is assigned
+      if (orderData.installerId) {
+        const defaultMilestones = [
+          { name: 'Site Assessment', percentage: 10, description: 'Initial site evaluation and permits' },
+          { name: 'Equipment Delivery', percentage: 20, description: 'Solar equipment delivered to site' },
+          { name: 'Installation Start', percentage: 30, description: 'Begin installation process' },
+          { name: 'System Installation', percentage: 60, description: 'Complete system installation' },
+          { name: 'Testing & Commissioning', percentage: 80, description: 'System testing and grid connection' },
+          { name: 'Final Inspection', percentage: 100, description: 'Final inspection and handover' },
+        ];
+
+        const totalAmount = parseFloat(orderData.totalAmount);
+        
+        for (const milestone of defaultMilestones) {
+          await storage.createInstallationMilestone({
+            orderId: order.id,
+            escrowAccountId: escrowAccount.id,
+            name: milestone.name,
+            description: milestone.description,
+            percentage: milestone.percentage.toString(),
+            amount: (totalAmount * milestone.percentage / 100).toString(),
+            dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+          });
+        }
+      }
+
+      // Update inventory
+      // Implementation would go here to reduce stock quantity
+
       // Clear cart after order creation
       await storage.clearCart(userId);
 
-      res.status(201).json(order);
+      res.status(201).json({ order, escrowAccount });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid order data", errors: error.errors });
@@ -523,6 +565,157 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching wallet transactions:", error);
       res.status(500).json({ message: "Failed to fetch wallet transactions" });
+    }
+  });
+
+  // Inventory routes
+  app.get('/api/inventory', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const user = await storage.getUser(userId);
+
+      if (user?.role !== 'vendor') {
+        return res.status(403).json({ message: "Only vendors can access inventory" });
+      }
+
+      const vendor = await storage.getVendorByUserId(userId);
+      if (!vendor) {
+        return res.status(404).json({ message: "Vendor profile not found" });
+      }
+
+      const inventory = await storage.getInventoryByVendor(vendor.id);
+      res.json(inventory);
+    } catch (error) {
+      console.error("Error fetching inventory:", error);
+      res.status(500).json({ message: "Failed to fetch inventory" });
+    }
+  });
+
+  app.post('/api/inventory', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const user = await storage.getUser(userId);
+
+      if (user?.role !== 'vendor') {
+        return res.status(403).json({ message: "Only vendors can manage inventory" });
+      }
+
+      const vendor = await storage.getVendorByUserId(userId);
+      if (!vendor) {
+        return res.status(404).json({ message: "Vendor profile not found" });
+      }
+
+      const inventoryData = {
+        ...req.body,
+        vendorId: vendor.id,
+      };
+
+      const inventory = await storage.createInventory(inventoryData);
+      res.status(201).json(inventory);
+    } catch (error) {
+      console.error("Error creating inventory:", error);
+      res.status(500).json({ message: "Failed to create inventory" });
+    }
+  });
+
+  app.put('/api/inventory/:id', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const inventoryId = parseInt(req.params.id);
+      const updatedInventory = await storage.updateInventory(inventoryId, req.body);
+      res.json(updatedInventory);
+    } catch (error) {
+      console.error("Error updating inventory:", error);
+      res.status(500).json({ message: "Failed to update inventory" });
+    }
+  });
+
+  app.get('/api/inventory/alerts', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const vendor = await storage.getVendorByUserId(userId);
+      if (!vendor) {
+        return res.status(404).json({ message: "Vendor profile not found" });
+      }
+
+      const alerts = await storage.getInventoryAlerts(vendor.id);
+      res.json(alerts);
+    } catch (error) {
+      console.error("Error fetching inventory alerts:", error);
+      res.status(500).json({ message: "Failed to fetch inventory alerts" });
+    }
+  });
+
+  // Escrow routes
+  app.get('/api/escrow', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const user = await storage.getUser(userId);
+
+      if (user?.role === 'vendor') {
+        const vendor = await storage.getVendorByUserId(userId);
+        if (vendor) {
+          const escrowAccounts = await storage.getEscrowAccountsByVendor(vendor.id);
+          return res.json(escrowAccounts);
+        }
+      }
+
+      // For buyers, get their escrow accounts
+      // Implementation would go here
+
+      res.json([]);
+    } catch (error) {
+      console.error("Error fetching escrow accounts:", error);
+      res.status(500).json({ message: "Failed to fetch escrow accounts" });
+    }
+  });
+
+  app.post('/api/escrow', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const escrowData = req.body;
+      const escrowAccount = await storage.createEscrowAccount(escrowData);
+      res.status(201).json(escrowAccount);
+    } catch (error) {
+      console.error("Error creating escrow account:", error);
+      res.status(500).json({ message: "Failed to create escrow account" });
+    }
+  });
+
+  // Milestone routes
+  app.get('/api/milestones', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { orderId } = req.query;
+      if (orderId) {
+        const milestones = await storage.getMilestonesByOrder(orderId as string);
+        return res.json(milestones);
+      }
+
+      // Return all milestones for the user's role
+      res.json([]);
+    } catch (error) {
+      console.error("Error fetching milestones:", error);
+      res.status(500).json({ message: "Failed to fetch milestones" });
+    }
+  });
+
+  app.post('/api/milestones', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const milestoneData = req.body;
+      const milestone = await storage.createInstallationMilestone(milestoneData);
+      res.status(201).json(milestone);
+    } catch (error) {
+      console.error("Error creating milestone:", error);
+      res.status(500).json({ message: "Failed to create milestone" });
+    }
+  });
+
+  app.put('/api/milestones/:id', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const milestoneId = parseInt(req.params.id);
+      const updatedMilestone = await storage.updateMilestone(milestoneId, req.body);
+      res.json(updatedMilestone);
+    } catch (error) {
+      console.error("Error updating milestone:", error);
+      res.status(500).json({ message: "Failed to update milestone" });
     }
   });
 

@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { Link } from "wouter";
-import { Star, MapPin, ShoppingCart, Eye } from "lucide-react";
+import { Star, MapPin, ShoppingCart, Eye, Package, AlertTriangle } from "lucide-react";
 
 interface ProductCardProps {
   product: {
@@ -22,6 +22,8 @@ interface ProductCardProps {
     vendorId: number;
     inStock: boolean;
     locations?: string[];
+    stockQuantity?: number;
+    minimumOrderQuantity?: number;
   };
   layout?: "grid" | "list";
 }
@@ -78,7 +80,7 @@ export default function ProductCard({ product, layout = "grid" }: ProductCardPro
       });
       return;
     }
-    
+
     setIsAddingToCart(true);
     addToCartMutation.mutate();
   };
@@ -127,7 +129,7 @@ export default function ProductCard({ product, layout = "grid" }: ProductCardPro
                 </Badge>
               )}
             </div>
-            
+
             <div className="flex-1 p-6">
               <div className="flex flex-col md:flex-row md:items-start md:justify-between">
                 <div className="flex-1">
@@ -138,15 +140,31 @@ export default function ProductCard({ product, layout = "grid" }: ProductCardPro
                       <span className="text-sm text-muted-foreground">4.8</span>
                     </div>
                   </div>
-                  
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-1">
+                      <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                      <span className="text-sm text-muted-foreground">4.8 (24 reviews)</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Badge variant="secondary">{product.type}</Badge>
+                      {product.stockQuantity <= 5 && (
+                        <Badge variant="destructive" className="flex items-center space-x-1">
+                          <AlertTriangle className="w-3 h-3" />
+                          <span>Low Stock</span>
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+
                   <Badge variant="secondary" className="mb-3">
                     {product.type.charAt(0).toUpperCase() + product.type.slice(1)}
                   </Badge>
-                  
+
                   <p className="text-muted-foreground mb-4 line-clamp-2">
                     {product.description}
                   </p>
-                  
+
                   {product.locations && product.locations.length > 0 && (
                     <div className="flex items-center space-x-2 text-sm text-muted-foreground mb-4">
                       <MapPin className="w-4 h-4" />
@@ -154,7 +172,7 @@ export default function ProductCard({ product, layout = "grid" }: ProductCardPro
                     </div>
                   )}
                 </div>
-                
+
                 <div className="md:ml-6 md:text-right">
                   <div className="mb-4">
                     <div className="text-2xl font-bold text-foreground">
@@ -167,7 +185,7 @@ export default function ProductCard({ product, layout = "grid" }: ProductCardPro
                       30% Tax Credit Available
                     </div>
                   </div>
-                  
+
                   <div className="flex space-x-3">
                     <Link href={`/products/${product.id}`}>
                       <Button variant="outline" size="sm">
@@ -211,7 +229,7 @@ export default function ProductCard({ product, layout = "grid" }: ProductCardPro
           </Badge>
         )}
       </div>
-      
+
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-lg font-semibold text-foreground">{product.name}</h3>
@@ -220,15 +238,48 @@ export default function ProductCard({ product, layout = "grid" }: ProductCardPro
             <span className="text-sm text-muted-foreground">4.8</span>
           </div>
         </div>
-        
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-1">
+            <Star className="w-4 h-4 text-yellow-400 fill-current" />
+            <span className="text-sm text-muted-foreground">4.8 (24 reviews)</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Badge variant="secondary">{product.type}</Badge>
+            {product.stockQuantity <= 5 && (
+              <Badge variant="destructive" className="flex items-center space-x-1">
+                <AlertTriangle className="w-3 h-3" />
+                <span>Low Stock</span>
+              </Badge>
+            )}
+          </div>
+        </div>
+
         <Badge variant="secondary" className="mb-3">
           {product.type.charAt(0).toUpperCase() + product.type.slice(1)}
         </Badge>
-        
+
         <p className="text-muted-foreground mb-4 line-clamp-3">
           {product.description}
         </p>
-        
+
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-2xl font-bold text-foreground">{formatPrice(product.price)}</div>
+          <div className="text-sm text-muted-foreground">{product.capacity}</div>
+        </div>
+
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-1 text-sm text-muted-foreground">
+            <Package className="w-4 h-4" />
+            <span>{product.stockQuantity || 0} in stock</span>
+          </div>
+          {product.minimumOrderQuantity > 1 && (
+            <div className="text-xs text-muted-foreground">
+              Min order: {product.minimumOrderQuantity}
+            </div>
+          )}
+        </div>
+
         <div className="space-y-3">
           <div className="flex justify-between items-center">
             <span className="text-2xl font-bold text-foreground">
@@ -238,11 +289,11 @@ export default function ProductCard({ product, layout = "grid" }: ProductCardPro
               30% Tax Credit Available
             </span>
           </div>
-          
+
           <div className="text-sm text-muted-foreground">
             <span className="font-medium">Installments:</span> {getInstallmentPrice(product.price)}/month (30 months)
           </div>
-          
+
           {product.locations && product.locations.length > 0 && (
             <div className="flex items-center space-x-2 text-sm text-muted-foreground">
               <MapPin className="w-4 h-4" />
@@ -250,7 +301,7 @@ export default function ProductCard({ product, layout = "grid" }: ProductCardPro
             </div>
           )}
         </div>
-        
+
         <div className="flex space-x-3 mt-6">
           <Button 
             className="flex-1 bg-primary hover:bg-primary/90" 

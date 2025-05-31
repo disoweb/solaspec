@@ -34,7 +34,21 @@ export default function Login() {
           title: "Success",
           description: "Logged in successfully!",
         });
-        setLocation("/home");
+        // Redirect based on user role
+        const userData = response;
+        switch (userData.role) {
+          case 'vendor':
+            setLocation("/vendor-dashboard");
+            break;
+          case 'admin':
+            setLocation("/admin-dashboard");
+            break;
+          case 'installer':
+            setLocation("/installer-dashboard");
+            break;
+          default:
+            setLocation("/buyer-dashboard");
+        }
       }
     } catch (error: any) {
       toast({

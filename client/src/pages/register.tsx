@@ -38,7 +38,21 @@ export default function Register() {
           title: "Success",
           description: "Account created successfully!",
         });
-        setLocation("/");
+        // Redirect based on user role
+        const userData = response;
+        switch (userData.role) {
+          case 'vendor':
+            setLocation("/vendor-dashboard");
+            break;
+          case 'admin':
+            setLocation("/admin-dashboard");
+            break;
+          case 'installer':
+            setLocation("/installer-dashboard");
+            break;
+          default:
+            setLocation("/buyer-dashboard");
+        }
       }
     } catch (error: any) {
       toast({
@@ -161,6 +175,10 @@ export default function Register() {
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="vendor" id="vendor" />
                     <Label htmlFor="vendor">Vendor - Sell solar systems</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="installer" id="installer" />
+                    <Label htmlFor="installer">Installer - Install solar systems</Label>
                   </div>
                 </RadioGroup>
               </div>

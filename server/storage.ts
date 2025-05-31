@@ -23,9 +23,15 @@ import {
   type InsertWalletTransaction,
   type Review,
   type InsertReview,
+  inventory,
+  inventoryMovements,
+  inventoryAlerts,
+  escrowAccounts,
+  installationMilestones,
+  milestonePayments
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, asc, like, and, or, sql, inArray } from "drizzle-orm";
+import { eq, desc, asc, like, and, or, sql, inArray, count } from "drizzle-orm";
 
 export interface IStorage {
   // User operations (custom authentication)
@@ -33,14 +39,14 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: UpsertUser): Promise<User>;
   updateUser(id: number, updates: Partial<UpsertUser>): Promise<User>;
-  
+
   // Vendor operations
   createVendor(vendor: InsertVendor): Promise<Vendor>;
   getVendor(id: number): Promise<Vendor | undefined>;
   getVendorByUserId(userId: string): Promise<Vendor | undefined>;
   getVendors(filters?: { location?: string; verified?: boolean }): Promise<Vendor[]>;
   updateVendor(id: number, updates: Partial<InsertVendor>): Promise<Vendor>;
-  
+
   // Product operations
   createProduct(product: InsertProduct): Promise<Product>;
   getProduct(id: number): Promise<Product | undefined>;
@@ -56,14 +62,14 @@ export interface IStorage {
   getProductsByVendor(vendorId: number): Promise<Product[]>;
   updateProduct(id: number, updates: Partial<InsertProduct>): Promise<Product>;
   deleteProduct(id: number): Promise<void>;
-  
+
   // Installer operations
   createInstaller(installer: InsertInstaller): Promise<Installer>;
   getInstaller(id: number): Promise<Installer | undefined>;
   getInstallerByUserId(userId: string): Promise<Installer | undefined>;
   getInstallers(filters?: { location?: string; verified?: boolean }): Promise<Installer[]>;
   updateInstaller(id: number, updates: Partial<InsertInstaller>): Promise<Installer>;
-  
+
   // Order operations
   createOrder(order: InsertOrder): Promise<Order>;
   getOrder(id: string): Promise<Order | undefined>;
@@ -71,25 +77,25 @@ export interface IStorage {
   getOrdersByVendor(vendorId: number): Promise<Order[]>;
   updateOrder(id: string, updates: Partial<InsertOrder>): Promise<Order>;
   getOrders(filters?: { status?: string; vendorId?: number }): Promise<Order[]>;
-  
+
   // Cart operations
   addToCart(cartItem: InsertCartItem): Promise<CartItem>;
   getCartItems(userId: string): Promise<CartItem[]>;
   updateCartItem(id: number, quantity: number): Promise<CartItem>;
   removeFromCart(id: number): Promise<void>;
   clearCart(userId: string): Promise<void>;
-  
+
   // Wallet operations
   createWalletTransaction(transaction: InsertWalletTransaction): Promise<WalletTransaction>;
   getWalletBalance(userId: string): Promise<number>;
   getWalletTransactions(userId: string): Promise<WalletTransaction[]>;
-  
+
   // Review operations
   createReview(review: InsertReview): Promise<Review>;
   getProductReviews(productId: number): Promise<Review[]>;
   getInstallerReviews(installerId: number): Promise<Review[]>;
   getVendorReviews(vendorId: number): Promise<Review[]>;
-  
+
   // Analytics
   getVendorStats(vendorId: number): Promise<{
     totalOrders: number;
@@ -98,7 +104,7 @@ export interface IStorage {
     monthlyOrders: number;
     monthlyRevenue: number;
   }>;
-  
+
   getAdminStats(): Promise<{
     totalUsers: number;
     totalVendors: number;
@@ -106,6 +112,26 @@ export interface IStorage {
     totalRevenue: number;
     recentOrders: Order[];
   }>;
+
+    // Inventory Management Methods
+    getInventoryByVendor(vendorId: number): Promise<any>;
+    createInventory(data: any): Promise<any>;
+    updateInventory(inventoryId: number, data: Partial<any>): Promise<any>;
+    addInventoryMovement(data: any): Promise<any>;
+    getInventoryAlerts(vendorId: number): Promise<any>;
+    markAlertAsRead(alertId: number): Promise<any>;
+
+    // Escrow Management Methods
+    createEscrowAccount(data: any): Promise<any>;
+    getEscrowAccountsByVendor(vendorId: number): Promise<any>;
+    updateEscrowAccount(escrowId: number, data: Partial<any>): Promise<any>;
+
+    // Milestone Management Methods
+    createInstallationMilestone(data: any): Promise<any>;
+    getMilestonesByOrder(orderId: string): Promise<any>;
+    updateMilestone(milestoneId: number, data: Partial<any>): Promise<any>;
+    createMilestonePayment(data: any): Promise<any>;
+    releaseMilestonePayment(paymentId: number): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -155,11 +181,11 @@ export class DatabaseStorage implements IStorage {
 
   async getVendors(filters?: { location?: string; verified?: boolean }): Promise<Vendor[]> {
     let query = db.select().from(vendors);
-    
+
     if (filters?.verified !== undefined) {
       query = query.where(eq(vendors.verified, filters.verified));
     }
-    
+
     return await query.orderBy(desc(vendors.rating));
   }
 
@@ -193,29 +219,29 @@ export class DatabaseStorage implements IStorage {
     search?: string;
   }): Promise<Product[]> {
     let query = db.select().from(products).where(eq(products.inStock, true));
-    
+
     const conditions = [];
-    
+
     if (filters?.type) {
       conditions.push(eq(products.type, filters.type as any));
     }
-    
+
     if (filters?.minPrice) {
       conditions.push(sql`${products.price} >= ${filters.minPrice}`);
     }
-    
+
     if (filters?.maxPrice) {
       conditions.push(sql`${products.price} <= ${filters.maxPrice}`);
     }
-    
+
     if (filters?.vendorId) {
       conditions.push(eq(products.vendorId, filters.vendorId));
     }
-    
+
     if (filters?.featured) {
       conditions.push(eq(products.featured, filters.featured));
     }
-    
+
     if (filters?.search) {
       conditions.push(
         or(
@@ -224,11 +250,11 @@ export class DatabaseStorage implements IStorage {
         )
       );
     }
-    
+
     if (conditions.length > 0) {
       query = query.where(and(...conditions));
     }
-    
+
     return await query.orderBy(desc(products.featured), desc(products.createdAt));
   }
 
@@ -271,11 +297,11 @@ export class DatabaseStorage implements IStorage {
 
   async getInstallers(filters?: { location?: string; verified?: boolean }): Promise<Installer[]> {
     let query = db.select().from(installers);
-    
+
     if (filters?.verified !== undefined) {
       query = query.where(eq(installers.verified, filters.verified));
     }
-    
+
     return await query.orderBy(desc(installers.rating));
   }
 
@@ -326,21 +352,21 @@ export class DatabaseStorage implements IStorage {
 
   async getOrders(filters?: { status?: string; vendorId?: number }): Promise<Order[]> {
     let query = db.select().from(orders);
-    
+
     const conditions = [];
-    
+
     if (filters?.status) {
       conditions.push(eq(orders.status, filters.status as any));
     }
-    
+
     if (filters?.vendorId) {
       conditions.push(eq(orders.vendorId, filters.vendorId));
     }
-    
+
     if (conditions.length > 0) {
       query = query.where(and(...conditions));
     }
-    
+
     return await query.orderBy(desc(orders.createdAt));
   }
 
@@ -410,7 +436,7 @@ export class DatabaseStorage implements IStorage {
       })
       .from(walletTransactions)
       .where(eq(walletTransactions.userId, userId));
-    
+
     return result?.balance || 0;
   }
 
@@ -526,6 +552,118 @@ export class DatabaseStorage implements IStorage {
       totalRevenue: orderStats?.totalRevenue || 0,
       recentOrders,
     };
+  }
+
+  // Inventory Management Methods
+  async getInventoryByVendor(vendorId: number) {
+    return db.select({
+      id: inventory.id,
+      productId: inventory.productId,
+      productName: products.name,
+      sku: products.sku,
+      quantity: inventory.quantity,
+      reservedQuantity: inventory.reservedQuantity,
+      minStockLevel: inventory.minStockLevel,
+      maxStockLevel: inventory.maxStockLevel,
+      lastRestocked: inventory.lastRestocked,
+    })
+    .from(inventory)
+    .leftJoin(products, eq(inventory.productId, products.id))
+    .where(eq(inventory.vendorId, vendorId));
+  }
+
+  async createInventory(data: any) {
+    const [newInventory] = await db.insert(inventory).values(data).returning();
+    return newInventory;
+  }
+
+  async updateInventory(inventoryId: number, data: Partial<any>) {
+    const [updatedInventory] = await db.update(inventory)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(inventory.id, inventoryId))
+      .returning();
+    return updatedInventory;
+  }
+
+  async addInventoryMovement(data: any) {
+    const [movement] = await db.insert(inventoryMovements).values(data).returning();
+    return movement;
+  }
+
+  async getInventoryAlerts(vendorId: number) {
+    return db.select()
+      .from(inventoryAlerts)
+      .where(and(eq(inventoryAlerts.vendorId, vendorId), eq(inventoryAlerts.isRead, false)));
+  }
+
+  async markAlertAsRead(alertId: number) {
+    return db.update(inventoryAlerts)
+      .set({ isRead: true })
+      .where(eq(inventoryAlerts.id, alertId));
+  }
+
+  // Escrow Management Methods
+  async createEscrowAccount(data: any) {
+    const [escrowAccount] = await db.insert(escrowAccounts).values(data).returning();
+    return escrowAccount;
+  }
+
+  async getEscrowAccountsByVendor(vendorId: number) {
+    return db.select({
+      id: escrowAccounts.id,
+      orderId: escrowAccounts.orderId,
+      totalAmount: escrowAccounts.totalAmount,
+      heldAmount: escrowAccounts.heldAmount,
+      releasedAmount: escrowAccounts.releasedAmount,
+      status: escrowAccounts.status,
+      customerName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
+      createdAt: escrowAccounts.createdAt,
+    })
+    .from(escrowAccounts)
+    .leftJoin(users, eq(escrowAccounts.buyerId, users.id))
+    .where(eq(escrowAccounts.vendorId, vendorId));
+  }
+
+  async updateEscrowAccount(escrowId: number, data: Partial<any>) {
+    const [updatedEscrow] = await db.update(escrowAccounts)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(escrowAccounts.id, escrowId))
+      .returning();
+    return updatedEscrow;
+  }
+
+  // Milestone Management Methods
+  async createInstallationMilestone(data: any) {
+    const [milestone] = await db.insert(installationMilestones).values(data).returning();
+    return milestone;
+  }
+
+  async getMilestonesByOrder(orderId: string) {
+    return db.select()
+      .from(installationMilestones)
+      .where(eq(installationMilestones.orderId, orderId))
+      .orderBy(installationMilestones.createdAt);
+  }
+
+  async updateMilestone(milestoneId: number, data: Partial<any>) {
+    const [updatedMilestone] = await db.update(installationMilestones)
+      .set(data)
+      .where(eq(installationMilestones.id, milestoneId))
+      .returning();
+    return updatedMilestone;
+  }
+
+  async createMilestonePayment(data: any) {
+    const [payment] = await db.insert(milestonePayments).values(data).returning();
+    return payment;
+  }
+
+  async releaseMilestonePayment(paymentId: number) {
+    const [payment] = await db.update(milestonePayments)
+      .set({ status: 'released', releasedAt: new Date() })
+      .where(eq(milestonePayments.id, paymentId))
+      .returning();
+    return payment;
   }
 }
 

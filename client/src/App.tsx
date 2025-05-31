@@ -15,6 +15,7 @@ import AdminDashboard from "./pages/admin-dashboard";
 import Installers from "./pages/installers";
 import NotFound from "./pages/not-found";
 import "./index.css";
+import InstallerDashboard from "./pages/installer-dashboard";
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
             <Route path="/vendor-dashboard" component={VendorDashboard} />
             <Route path="/admin-dashboard" component={AdminDashboard} />
             <Route path="/installers" component={Installers} />
+            <Route path="/installer-dashboard" component={InstallerDashboard} />
             <Route component={NotFound} />
           </Switch>
           <Toaster />

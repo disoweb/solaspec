@@ -32,6 +32,14 @@ export default function Marketplace() {
     setMaxPrice("");
   };
 
+  const filteredProducts = products?.filter((product: any) => {
+    const matchesSearch = !searchTerm || product.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = !selectedType || selectedType === "all" || product.type === selectedType;
+    const matchesMinPrice = !minPrice || parseFloat(product.price) >= parseFloat(minPrice);
+    const matchesMaxPrice = !maxPrice || parseFloat(product.price) <= parseFloat(maxPrice);
+    return matchesSearch && matchesType && matchesMinPrice && matchesMaxPrice;
+  });
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -132,7 +140,7 @@ export default function Marketplace() {
           <div className="flex items-center justify-between mb-8">
             <div>
               <h2 className="text-2xl font-bold text-foreground">
-                {isLoading ? "Loading..." : `${products?.length || 0} Solar Systems Found`}
+                {isLoading ? "Loading..." : `${filteredProducts?.length || 0} Solar Systems Found`}
               </h2>
               {(searchTerm || (selectedType && selectedType !== "all") || minPrice || maxPrice) && (
                 <div className="flex flex-wrap gap-2 mt-2">
@@ -175,9 +183,9 @@ export default function Marketplace() {
                 </Card>
               ))}
             </div>
-          ) : products && products.length > 0 ? (
+          ) : filteredProducts && filteredProducts.length > 0 ? (
             <div className={viewMode === "grid" ? "grid md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-6"}>
-              {products.map((product: any) => (
+              {filteredProducts.map((product: any) => (
                 <ProductCard 
                   key={product.id} 
                   product={product} 
