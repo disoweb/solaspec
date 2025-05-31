@@ -104,7 +104,7 @@ export class AuthService {
 // Middleware to authenticate requests
 export const authenticate = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const token = req.cookies.auth_token || req.headers.authorization?.replace("Bearer ", "");
+    const token = req.cookies["auth-token"] || req.headers.authorization?.replace("Bearer ", "");
 
     if (!token) {
       return res.status(401).json({ message: "No token provided" });

@@ -27,7 +27,12 @@ export const apiRequest = async (url: string, options: RequestInit = {}) => {
     throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
   }
 
-  return response.json();
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    return response.json();
+  }
+
+  return response.text();
 };
 
 type UnauthorizedBehavior = "returnNull" | "throw";
