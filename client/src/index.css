@@ -135,6 +135,16 @@
       overflow-x: hidden;
     }
 
+    /* Fix sticky header on mobile */
+    header {
+      position: sticky !important;
+      top: 0 !important;
+      z-index: 50 !important;
+      width: 100% !important;
+      left: 0 !important;
+      right: 0 !important;
+    }
+
     /* Fix button text wrapping */
     .btn-mobile {
       white-space: nowrap;
