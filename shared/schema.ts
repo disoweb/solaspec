@@ -126,7 +126,7 @@ export const cartItems = pgTable("cart_items", {
 // Wallet transactions table
 export const walletTransactions = pgTable("wallet_transactions", {
   id: serial("id").primaryKey(),
-  userId: varchar("user_id").notNull().references(() => users.id),
+  userId: integer("user_id").notNull().references(() => users.id),
   orderId: uuid("order_id").references(() => orders.id),
   type: varchar("type", { enum: ["deposit", "withdrawal", "payment", "refund", "escrow_hold", "escrow_release"] }).notNull(),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
