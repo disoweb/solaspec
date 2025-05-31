@@ -35,7 +35,7 @@ export default function Marketplace() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       {/* Hero Section */}
       <section className="solar-gradient py-12">
         <div className="max-w-7xl mx-auto container-mobile">
@@ -64,7 +64,7 @@ export default function Marketplace() {
                 className="pl-10"
               />
             </div>
-            
+
             {/* Filters */}
             <div className="flex flex-wrap gap-4 items-center">
               <Select value={selectedType} onValueChange={setSelectedType}>
@@ -72,13 +72,13 @@ export default function Marketplace() {
                   <SelectValue placeholder="System Type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Types</SelectItem>
+                  <SelectItem value="all">All Types</SelectItem>
                   <SelectItem value="residential">Residential</SelectItem>
                   <SelectItem value="commercial">Commercial</SelectItem>
                   <SelectItem value="industrial">Industrial</SelectItem>
                 </SelectContent>
               </Select>
-              
+
               <Input
                 placeholder="Min Price"
                 value={minPrice}
@@ -86,7 +86,7 @@ export default function Marketplace() {
                 className="w-24"
                 type="number"
               />
-              
+
               <Input
                 placeholder="Max Price"
                 value={maxPrice}
@@ -94,14 +94,14 @@ export default function Marketplace() {
                 className="w-24"
                 type="number"
               />
-              
-              {(searchTerm || selectedType || minPrice || maxPrice) && (
+
+              {(searchTerm || (selectedType && selectedType !== "all") || minPrice || maxPrice) && (
                 <Button variant="outline" onClick={clearFilters}>
                   Clear Filters
                 </Button>
               )}
             </div>
-            
+
             {/* View Mode Toggle */}
             <div className="flex border rounded-lg">
               <Button
@@ -134,7 +134,7 @@ export default function Marketplace() {
               <h2 className="text-2xl font-bold text-foreground">
                 {isLoading ? "Loading..." : `${products?.length || 0} Solar Systems Found`}
               </h2>
-              {(searchTerm || selectedType || minPrice || maxPrice) && (
+              {(searchTerm || (selectedType && selectedType !== "all") || minPrice || maxPrice) && (
                 <div className="flex flex-wrap gap-2 mt-2">
                   {searchTerm && (
                     <Badge variant="secondary">
