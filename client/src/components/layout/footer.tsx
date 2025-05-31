@@ -35,15 +35,15 @@ export default function Footer() {
               </a>
             </div>
           </div>
-          
+
           {/* Marketplace */}
           <div>
             <h3 className="text-lg font-semibold mb-4">Marketplace</h3>
             <ul className="space-y-2 text-gray-400">
               <li>
-                <Link href="/marketplace">
-                  <a className="hover:text-white transition-colors">Browse Products</a>
-                </Link>
+                <a href="/marketplace" className="text-muted-foreground hover:text-foreground transition-colors">
+                    Browse Systems
+                  </a>
               </li>
               <li>
                 <a href="#" className="hover:text-white transition-colors">Solar Calculators</a>
@@ -58,7 +58,7 @@ export default function Footer() {
               </li>
             </ul>
           </div>
-          
+
           {/* For Vendors */}
           <div>
             <h3 className="text-lg font-semibold mb-4">For Vendors</h3>
@@ -79,7 +79,7 @@ export default function Footer() {
               </li>
             </ul>
           </div>
-          
+
           {/* Support */}
           <div>
             <h3 className="text-lg font-semibold mb-4">Support</h3>
@@ -99,7 +99,7 @@ export default function Footer() {
             </ul>
           </div>
         </div>
-        
+
         <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
           <p className="text-gray-400">&copy; 2024 SolarConnect. All rights reserved.</p>
           <div className="flex space-x-6 mt-4 md:mt-0">

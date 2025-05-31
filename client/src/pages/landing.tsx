@@ -117,32 +117,34 @@ export default function Landing() {
       
       {/* Trust Banner */}
       <section className="bg-green-50 border-b border-green-200 py-3">
-        <div className="max-w-7xl mx-auto container-mobile">
-          <div className="flex items-center justify-center space-x-6 text-sm text-green-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs sm:text-sm text-green-800">
             <div className="flex items-center space-x-2">
               <Shield className="w-4 h-4" />
               <span className="font-medium">SOC 2 Certified</span>
             </div>
             <div className="flex items-center space-x-2">
               <CheckCircle className="w-4 h-4" />
-              <span className="font-medium">Better Business Bureau A+</span>
+              <span className="font-medium hidden sm:inline">Better Business Bureau A+</span>
+              <span className="font-medium sm:hidden">BBB A+</span>
             </div>
             <div className="flex items-center space-x-2">
               <Award className="w-4 h-4" />
-              <span className="font-medium">NABCEP Certified Installers</span>
+              <span className="font-medium hidden sm:inline">NABCEP Certified Installers</span>
+              <span className="font-medium sm:hidden">Certified</span>
             </div>
             <div className="flex items-center space-x-2">
               <Users className="w-4 h-4" />
-              <span className="font-medium">10,000+ Happy Customers</span>
+              <span className="font-medium">10,000+ Customers</span>
             </div>
           </div>
         </div>
       </section>
 
       {/* Hero Section */}
-      <section className="solar-gradient py-12 lg:py-20">
-        <div className="max-w-7xl mx-auto container-mobile">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+      <section className="solar-gradient py-8 sm:py-12 lg:py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             <div className="animate-fade-in">
               <div className="flex flex-wrap items-center gap-4 mb-6">
                 <Badge variant="secondary" className="bg-green-100 text-green-800 hover:bg-green-100">
@@ -162,11 +164,11 @@ export default function Landing() {
                 </Badge>
               </div>
               
-              <h1 className="text-4xl lg:text-5xl font-bold text-foreground mb-6">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-foreground mb-4 sm:mb-6">
                 Verified Solar Systems with <span className="solar-text">Escrow Protection</span>
               </h1>
               
-              <p className="text-xl text-muted-foreground mb-8">
+              <p className="text-base sm:text-lg lg:text-xl text-muted-foreground mb-6 sm:mb-8">
                 Connect with certified vendors and installers. Shop with confidence using our secure escrow system and pay in flexible installments.
               </p>
               

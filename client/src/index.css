@@ -98,11 +98,28 @@
 /* Mobile-first responsive design helpers */
 .container-mobile {
     @apply px-4 sm:px-6 lg:px-8;
-    max-width: 100vw;
-    overflow-x: hidden;
   }
 
-  /* Mobile responsive fixes */
+  /* Mobile improvements */
+  @media (max-width: 640px) {
+    .solar-gradient {
+      @apply py-8;
+    }
+
+    .grid {
+      @apply gap-6;
+    }
+
+    h1 {
+      @apply leading-tight;
+    }
+
+    .flex-col.sm\:flex-row {
+      @apply gap-3;
+    }
+  }
+
+/* Mobile responsive fixes */
   @media (max-width: 640px) {
     .container-mobile {
       @apply px-3;

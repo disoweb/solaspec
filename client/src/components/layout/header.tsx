@@ -1,31 +1,24 @@
 import { useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { useQuery } from "@tanstack/react-query";
-import { Link, useLocation } from "wouter";
-import { queryClient } from "@/lib/queryClient";
-import { 
-  Zap, 
-  Menu, 
-  ShoppingCart, 
-  User, 
-  LogOut,
-  LayoutDashboard,
-  Store,
-  Users,
-  Shield
-} from "lucide-react";
+import { Menu, Zap, ShoppingCart, User, LogOut, BarChart3, Package, Settings } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import ShoppingCartSidebar from "@/components/shopping-cart";
 
 export default function Header() {
-  const { user, isAuthenticated } = useAuth();
-  const [location] = useLocation();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [, setLocation] = useLocation();
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const { toast } = useToast();
+  const { user, logout } = useAuth();
 
   const { data: cartItems } = useQuery({
     queryKey: ["/api/cart"],
-    enabled: isAuthenticated,
+    enabled: !!user,
   });
 
   const cartItemCount = cartItems?.length || 0;
@@ -75,7 +68,7 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link href={isAuthenticated ? "/" : "/"}>
+          <Link href={user ? "/" : "/"}>
             <div className="flex items-center space-x-2 cursor-pointer">
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <Zap className="w-5 h-5 text-primary-foreground" />
@@ -103,7 +96,7 @@ export default function Header() {
 
           {/* Right Side Actions */}
           <div className="flex items-center space-x-4">
-            {isAuthenticated ? (
+            {user ? (
               <>
                 {/* Cart Icon (for buyers) */}
                 {user?.role !== 'admin' && (
@@ -187,7 +180,7 @@ export default function Header() {
             )}
 
             {/* Mobile Menu Toggle */}
-            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="sm" className="md:hidden">
                   <Menu className="w-5 h-5" />
@@ -201,23 +194,23 @@ export default function Header() {
                       <Button 
                         variant="ghost" 
                         className="w-full justify-start"
-                        onClick={() => setIsMobileMenuOpen(false)}
+                        onClick={() => setIsSheetOpen(false)}
                       >
                         {item.name}
                       </Button>
                     </Link>
                   ))}
 
-                  {isAuthenticated && (
+                  {user && (
                     <>
                       <hr className="my-4" />
-                      
+
                       {/* Dashboard Link */}
                       <Link href={getDashboardPath()}>
                         <Button 
                           variant="ghost" 
                           className="w-full justify-start"
-                          onClick={() => setIsMobileMenuOpen(false)}
+                          onClick={() => setIsSheetOpen(false)}
                         >
                           {getDashboardIcon()}
                           <span className="ml-2">{getDashboardLabel()}</span>
@@ -230,7 +223,7 @@ export default function Header() {
                           <Button 
                             variant="ghost" 
                             className="w-full justify-start"
-                            onClick={() => setIsMobileMenuOpen(false)}
+                            onClick={() => setIsSheetOpen(false)}
                           >
                             <ShoppingCart className="w-4 h-4" />
                             <span className="ml-2">Cart ({cartItemCount})</span>
@@ -276,7 +269,7 @@ export default function Header() {
                               credentials: 'include'
                             });
                             queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-                            setIsMobileMenuOpen(false);
+                            setIsSheetOpen(false);
                             window.location.href = '/';
                           } catch (error) {
                             console.error('Logout error:', error);

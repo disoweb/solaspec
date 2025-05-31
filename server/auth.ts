@@ -9,6 +9,7 @@ const JWT_EXPIRES_IN = "7d";
 
 export interface AuthenticatedRequest extends Request {
   user?: User;
+  userId?: string;
 }
 
 export class AuthService {
@@ -121,6 +122,7 @@ export const authenticate = async (req: AuthenticatedRequest, res: Response, nex
     }
 
     req.user = user;
+    req.userId = user.id;
     next();
   } catch (error) {
     return res.status(401).json({ message: "Authentication failed" });
