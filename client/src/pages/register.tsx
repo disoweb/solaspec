@@ -38,7 +38,7 @@ export default function Register() {
           title: "Success",
           description: "Account created successfully!",
         });
-        setLocation("/");
+        setLocation("/home");
       }
     } catch (error: any) {
       toast({

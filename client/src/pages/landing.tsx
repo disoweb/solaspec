@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Star, Zap, Shield, Clock, CheckCircle, Users, Award, ArrowRight } from "lucide-react";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
+import Link from "next/link";
 
 export default function Landing() {
   const featuredProducts = [
@@ -114,7 +115,7 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       {/* Trust Banner */}
       <section className="bg-green-50 border-b border-green-200 py-3">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -163,15 +164,15 @@ export default function Landing() {
                   $2.4B+ Solar Systems Sold
                 </Badge>
               </div>
-              
+
               <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-foreground mb-4 sm:mb-6">
                 Verified Solar Systems with <span className="text-blue-600">Escrow Protection</span>
               </h1>
-              
+
               <p className="text-base sm:text-lg lg:text-xl text-muted-foreground mb-6 sm:mb-8">
                 Connect with certified vendors and installers. Shop with confidence using our secure escrow system and pay in flexible installments.
               </p>
-              
+
               <div className="flex flex-col sm:flex-row gap-4 mb-8">
                 <Button size="lg" className="solar-bg hover:bg-primary/90">
                   Explore Solar Systems
@@ -181,7 +182,7 @@ export default function Landing() {
                   Find Installers
                 </Button>
               </div>
-              
+
               {/* Trust Indicators */}
               <div className="grid grid-cols-3 gap-6 pt-8 border-t border-border">
                 <div className="text-center">
@@ -207,7 +208,7 @@ export default function Landing() {
                 </div>
               </div>
             </div>
-            
+
             <div className="relative animate-slide-up">
               <img 
                 src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&h=600&fit=crop" 
@@ -262,7 +263,7 @@ export default function Landing() {
             <h2 className="text-3xl font-bold text-foreground mb-4">Featured Solar Systems</h2>
             <p className="text-xl text-muted-foreground">Top-rated systems from verified vendors</p>
           </div>
-          
+
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {featuredProducts.map((product, index) => (
               <Card key={product.id} className="overflow-hidden hover:shadow-xl transition-shadow animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
@@ -286,7 +287,7 @@ export default function Landing() {
                   </div>
                   <p className="text-sm text-muted-foreground mb-3">by {product.vendor}</p>
                   <p className="text-foreground mb-4">Complete {product.capacity} system with high-efficiency panels and warranty.</p>
-                  
+
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="text-2xl font-bold text-foreground">{product.price}</span>
@@ -299,7 +300,7 @@ export default function Landing() {
                       <span>Available in {product.locations}</span>
                     </div>
                   </div>
-                  
+
                   <div className="flex space-x-3 mt-6">
                     <Button className="flex-1 solar-bg hover:bg-primary/90">
                       Add to Cart
@@ -312,7 +313,7 @@ export default function Landing() {
               </Card>
             ))}
           </div>
-          
+
           <div className="text-center mt-12">
             <Button variant="outline" size="lg" className="solar-border solar-text hover:bg-accent">
               View All Products
@@ -328,7 +329,7 @@ export default function Landing() {
             <h2 className="text-3xl font-bold text-foreground mb-4">How Solaspec Works</h2>
             <p className="text-xl text-muted-foreground">Simple, secure, and transparent solar purchasing</p>
           </div>
-          
+
           <div className="grid md:grid-cols-4 gap-8">
             {[
               {
@@ -371,7 +372,7 @@ export default function Landing() {
             <h2 className="text-3xl font-bold text-foreground mb-4">Certified Installer Network</h2>
             <p className="text-xl text-muted-foreground">Connect with verified professionals in your area</p>
           </div>
-          
+
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {installers.map((installer, index) => (
               <Card key={installer.id} className="p-6 animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
@@ -390,7 +391,7 @@ export default function Landing() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="space-y-3 mb-4">
                   <div className="text-sm text-muted-foreground">
                     📍 {installer.location}
@@ -402,12 +403,12 @@ export default function Landing() {
                     🏠 {installer.installations}+ installations
                   </div>
                 </div>
-                
+
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-sm font-medium text-foreground">Next Available:</span>
                   <span className="text-sm text-green-600 font-medium">{installer.availability}</span>
                 </div>
-                
+
                 <div className="flex space-x-3">
                   <Button className="flex-1 solar-bg hover:bg-primary/90">
                     Contact
@@ -419,7 +420,7 @@ export default function Landing() {
               </Card>
             ))}
           </div>
-          
+
           <div className="text-center mt-12">
             <Button className="solar-bg hover:bg-primary/90" size="lg">
               Find Installers Near You
@@ -435,7 +436,7 @@ export default function Landing() {
             <h2 className="text-3xl font-bold text-foreground mb-4">Bank-Level Security & Compliance</h2>
             <p className="text-xl text-muted-foreground">Your data and transactions are protected by industry-leading security</p>
           </div>
-          
+
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 text-center">
             {[
               {
@@ -478,7 +479,7 @@ export default function Landing() {
             <h2 className="text-3xl font-bold text-foreground mb-4">Secure Payment & Escrow Protection</h2>
             <p className="text-xl text-muted-foreground">Your investment is protected every step of the way</p>
           </div>
-          
+
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-8">
               {[
@@ -512,7 +513,7 @@ export default function Landing() {
                 </div>
               ))}
             </div>
-            
+
             <Card className="p-8 bg-muted/30">
               <h3 className="text-xl font-semibold text-foreground mb-6">Payment Calculator</h3>
               <div className="space-y-6">
@@ -520,12 +521,12 @@ export default function Landing() {
                   <label className="block text-sm font-medium text-foreground mb-2">System Price</label>
                   <div className="text-2xl font-bold text-foreground">$25,000</div>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">Payment Terms</label>
                   <div className="text-muted-foreground">36 months (30% fee)</div>
                 </div>
-                
+
                 <Card className="p-4 bg-card border">
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
@@ -551,7 +552,7 @@ export default function Landing() {
                     </div>
                   </div>
                 </Card>
-                
+
                 <Button className="w-full solar-bg hover:bg-primary/90">
                   Apply for Financing
                 </Button>
@@ -587,7 +588,7 @@ export default function Landing() {
             <h2 className="text-3xl font-bold text-foreground mb-4">What Our Customers Say</h2>
             <p className="text-xl text-muted-foreground">Real experiences from satisfied solar system owners</p>
           </div>
-          
+
           <div className="grid md:grid-cols-3 gap-8">
             {testimonials.map((testimonial, index) => (
               <Card key={testimonial.name} className="p-6 animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
@@ -634,13 +635,13 @@ export default function Landing() {
             Join thousands of satisfied customers who have made the switch to clean, affordable solar energy with Solaspec's trusted platform.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" variant="secondary" className="bg-white text-primary hover:bg-gray-100">
-              Browse Solar Systems
-            </Button>
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-primary">
-              Become a Vendor
-            </Button>
-          </div>
+                <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white" asChild>
+                  <Link href="/marketplace">Browse Solar Systems</Link>
+                </Button>
+                <Button size="lg" variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50" asChild>
+                  <Link href="/register">Become a Vendor</Link>
+                </Button>
+              </div>
         </div>
       </section>
 

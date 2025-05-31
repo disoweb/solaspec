@@ -34,7 +34,7 @@ export default function Login() {
           title: "Success",
           description: "Logged in successfully!",
         });
-        setLocation("/");
+        setLocation("/home");
       }
     } catch (error: any) {
       toast({

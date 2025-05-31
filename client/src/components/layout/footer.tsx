@@ -41,9 +41,9 @@ export default function Footer() {
             <h3 className="text-lg font-semibold mb-4">Marketplace</h3>
             <ul className="space-y-2 text-gray-400">
               <li>
-                <a href="/marketplace" className="text-muted-foreground hover:text-foreground transition-colors">
+                <Link href="/marketplace" className="text-muted-foreground hover:text-foreground transition-colors">
                     Browse Systems
-                  </a>
+                  </Link>
               </li>
               <li>
                 <a href="#" className="hover:text-white transition-colors">Solar Calculators</a>
@@ -52,9 +52,7 @@ export default function Footer() {
                 <a href="#" className="hover:text-white transition-colors">Financing Options</a>
               </li>
               <li>
-                <Link href="/installers">
-                  <a className="hover:text-white transition-colors">Installation Service</a>
-                </Link>
+                <Link href="/installers" className="hover:text-white transition-colors">Installation Service</Link>
               </li>
             </ul>
           </div>
@@ -67,9 +65,7 @@ export default function Footer() {
                 <a href="/api/login" className="hover:text-white transition-colors">Sell on SolarConnect</a>
               </li>
               <li>
-                <Link href="/vendor-dashboard">
-                  <a className="hover:text-white transition-colors">Vendor Dashboard</a>
-                </Link>
+                <Link href="/vendor-dashboard" className="hover:text-white transition-colors">Vendor Dashboard</Link>
               </li>
               <li>
                 <a href="#" className="hover:text-white transition-colors">Analytics Tools</a>

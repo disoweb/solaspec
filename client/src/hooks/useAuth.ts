@@ -1,5 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export function useAuth() {
   const [, setLocation] = useLocation();
@@ -9,6 +10,23 @@ export function useAuth() {
     retry: false,
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("/api/auth/logout", {
+        method: "POST",
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      setLocation("/");
+    },
+    onError: () => {
+      // Force logout even if API fails
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      setLocation("/");
+    },
   });
 
   const isAuthenticated = !!user && !error;
@@ -27,10 +45,15 @@ export function useAuth() {
     return true;
   };
 
+  const logout = () => {
+    logoutMutation.mutate();
+  };
+
   return {
     user,
     isAuthenticated,
     isLoading,
     requireAuth,
+    logout,
   };
 }

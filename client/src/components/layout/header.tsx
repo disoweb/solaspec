@@ -5,8 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, Zap, ShoppingCart, User, LogOut, BarChart3, Package, Settings, Store, Shield, LayoutDashboard } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import ShoppingCartSidebar from "@/components/shopping-cart";
 
@@ -60,6 +59,23 @@ export default function Header() {
         return 'Admin Dashboard';
       default:
         return 'Dashboard';
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast({
+        title: "Success",
+        description: "Logged out successfully",
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast({
+        title: "Error",
+        description: "Logout failed",
+        variant: "destructive",
+      });
     }
   };
 
@@ -147,22 +163,10 @@ export default function Header() {
                 </div>
 
                 {/* Logout */}
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   size="sm"
-                  onClick={async () => {
-                    try {
-                      await fetch('/api/auth/logout', { 
-                        method: 'POST',
-                        credentials: 'include'
-                      });
-                      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-                      window.location.href = '/';
-                    } catch (error) {
-                      console.error('Logout error:', error);
-                      window.location.href = '/';
-                    }
-                  }}
+                  onClick={handleLogout}
                 >
                   <LogOut className="w-4 h-4" />
                   <span className="hidden sm:ml-2 sm:block">Logout</span>
@@ -259,22 +263,12 @@ export default function Header() {
                         </div>
                       </div>
 
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         className="w-full"
-                        onClick={async () => {
-                          try {
-                            await fetch('/api/auth/logout', { 
-                              method: 'POST',
-                              credentials: 'include'
-                            });
-                            queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-                            setIsSheetOpen(false);
-                            window.location.href = '/';
-                          } catch (error) {
-                            console.error('Logout error:', error);
-                            window.location.href = '/';
-                          }
+                        onClick={() => {
+                          handleLogout();
+                          setIsSheetOpen(false);
                         }}
                       >
                         <LogOut className="w-4 h-4 mr-2" />
