@@ -13,17 +13,122 @@ import {
   insertReviewSchema 
 } from "@shared/schema";
 import { z } from "zod";
+import { authMiddleware } from "./auth";
+import { db } from "./db";
+import { users, products, vendors, installers, orders, reviews, carts } from "../shared/schema";
+import { eq, desc, sql, and, ilike, or, count } from "drizzle-orm";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { Request, Response } from "express";
+
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Add cookie parser middleware
   app.use(cookieParser());
 
   // Authentication routes
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      const { email, password, firstName, lastName, phone, role } = req.body;
+
+      // Check if user already exists
+      const existingUser = await db.select().from(users).where(eq(users.email, email)).limit(1);
+      if (existingUser.length > 0) {
+        return res.status(400).json({ message: "User already exists" });
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Create user
+      const [newUser] = await db.insert(users).values({
+        email,
+        password: hashedPassword,
+        firstName,
+        lastName,
+        phone: phone || null,
+        role: role || "buyer",
+      }).returning();
+
+      // Generate JWT token
+      const token = jwt.sign({ userId: newUser.id }, JWT_SECRET, { expiresIn: "7d" });
+
+      // Set cookie
+      res.cookie("auth-token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
+
+      const { password: _, ...userWithoutPassword } = newUser;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error("Registration error:", error);
+      res.status(500).json({ message: "Registration failed" });
+    }
+  });
+
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { email, password } = req.body;
+
+      // Find user
+      const user = await db.select().from(users).where(eq(users.email, email)).limit(1);
+      if (!user[0]) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+
+      // Verify password
+      const isValidPassword = await bcrypt.compare(password, user[0].password);
+      if (!isValidPassword) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+
+      // Generate JWT token
+      const token = jwt.sign({ userId: user[0].id }, JWT_SECRET, { expiresIn: "7d" });
+
+      // Set cookie
+      res.cookie("auth-token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
+
+      const { password: _, ...userWithoutPassword } = user[0];
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ message: "Login failed" });
+    }
+  });
+
+  app.post("/api/auth/logout", (req, res) => {
+    res.clearCookie("auth-token");
+    res.json({ message: "Logged out successfully" });
+  });
+
+  app.get("/api/auth/user", authMiddleware, async (req: any, res) => {
+    try {
+      const user = await db.select().from(users).where(eq(users.id, req.userId)).limit(1);
+      if (!user[0]) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      const { password: _, ...userWithoutPassword } = user[0];
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error("Get user error:", error);
+      res.status(500).json({ message: "Failed to get user" });
+    }
+  });
+
   app.post('/api/auth/register', async (req, res) => {
     try {
       const validatedData = insertUserSchema.parse(req.body);
       const { user, token } = await AuthService.register(validatedData);
-      
+
       // Set HTTP-only cookie
       res.cookie('auth_token', token, {
         httpOnly: true,
@@ -42,7 +147,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { email, password } = req.body;
       const { user, token } = await AuthService.login(email, password);
-      
+
       // Set HTTP-only cookie
       res.cookie('auth_token', token, {
         httpOnly: true,
@@ -109,7 +214,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.id;
       const user = req.user;
-      
+
       if (user?.role !== 'vendor') {
         return res.status(403).json({ message: "Only vendors can create products" });
       }
@@ -153,7 +258,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.id;
       const user = await storage.getUser(userId);
-      
+
       if (user?.role !== 'vendor') {
         return res.status(403).json({ message: "User must have vendor role" });
       }
@@ -205,7 +310,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/installers', authenticate, async (req: AuthenticatedRequest, res) => {
     try {
       const userId = req.user!.id;
-      
+
       const installerData = insertInstallerSchema.parse({
         ...req.body,
         userId,
@@ -257,7 +362,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const { quantity } = req.body;
-      
+
       if (!quantity || quantity < 1) {
         return res.status(400).json({ message: "Invalid quantity" });
       }
@@ -286,7 +391,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.id;
       const user = await storage.getUser(userId);
-      
+
       if (user?.role === 'vendor') {
         const vendor = await storage.getVendorByUserId(userId);
         if (vendor) {
@@ -294,7 +399,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.json(orders);
         }
       }
-      
+
       const orders = await storage.getOrdersByUser(userId);
       res.json(orders);
     } catch (error) {
@@ -306,7 +411,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/orders', authenticate, async (req: AuthenticatedRequest, res) => {
     try {
       const userId = req.user!.id;
-      
+
       const orderData = insertOrderSchema.parse({
         ...req.body,
         buyerId: userId,
@@ -321,10 +426,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const order = await storage.createOrder(orderData);
-      
+
       // Clear cart after order creation
       await storage.clearCart(userId);
-      
+
       res.status(201).json(order);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -340,7 +445,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const orderId = req.params.id;
       const userId = req.user!.id;
       const user = await storage.getUser(userId);
-      
+
       const order = await storage.getOrder(orderId);
       if (!order) {
         return res.status(404).json({ message: "Order not found" });
@@ -368,7 +473,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/reviews', authenticate, async (req: AuthenticatedRequest, res) => {
     try {
       const userId = req.user!.id;
-      
+
       const reviewData = insertReviewSchema.parse({
         ...req.body,
         userId,
@@ -401,7 +506,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.id;
       const user = await storage.getUser(userId);
-      
+
       if (user?.role !== 'vendor') {
         return res.status(403).json({ message: "Access denied" });
       }
@@ -423,7 +528,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.id;
       const user = await storage.getUser(userId);
-      
+
       if (user?.role !== 'admin') {
         return res.status(403).json({ message: "Access denied" });
       }

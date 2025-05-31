@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
+import { queryClient } from "@/lib/queryClient";
 import { 
   Zap, 
   Menu, 
@@ -157,9 +158,17 @@ export default function Header() {
                   variant="ghost" 
                   size="sm"
                   onClick={async () => {
-                    await fetch('/api/auth/logout', { method: 'POST' });
-                    queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-                    window.location.href = '/';
+                    try {
+                      await fetch('/api/auth/logout', { 
+                        method: 'POST',
+                        credentials: 'include'
+                      });
+                      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+                      window.location.href = '/';
+                    } catch (error) {
+                      console.error('Logout error:', error);
+                      window.location.href = '/';
+                    }
                   }}
                 >
                   <LogOut className="w-4 h-4" />
@@ -257,11 +266,26 @@ export default function Header() {
                         </div>
                       </div>
 
-                      <Button variant="outline" className="w-full" asChild>
-                        <a href="/api/logout">
-                          <LogOut className="w-4 h-4 mr-2" />
-                          Logout
-                        </a>
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={async () => {
+                          try {
+                            await fetch('/api/auth/logout', { 
+                              method: 'POST',
+                              credentials: 'include'
+                            });
+                            queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+                            setIsMobileMenuOpen(false);
+                            window.location.href = '/';
+                          } catch (error) {
+                            console.error('Logout error:', error);
+                            window.location.href = '/';
+                          }
+                        }}
+                      >
+                        <LogOut className="w-4 h-4 mr-2" />
+                        Logout
                       </Button>
                     </>
                   )}
