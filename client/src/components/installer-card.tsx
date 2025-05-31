@@ -42,7 +42,7 @@ export default function InstallerCard({ installer, user }: InstallerCardProps) {
         <div className="flex items-center space-x-4 mb-4">
           <img 
             src={user?.profileImageUrl || defaultImage}
-            alt={`${user?.firstName} ${user?.lastName}` || installer.companyName}
+            alt={`${user?.firstName || ""} ${user?.lastName || ""}`.trim() || installer.companyName}
             className="w-16 h-16 rounded-full object-cover"
           />
           <div>
