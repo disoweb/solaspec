@@ -107,8 +107,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/products', authenticate, async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
+      const userId = req.user!.id;
+      const user = req.user;
       
       if (user?.role !== 'vendor') {
         return res.status(403).json({ message: "Only vendors can create products" });

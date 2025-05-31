@@ -47,7 +47,7 @@ export const users = pgTable("users", {
 // Vendors table
 export const vendors = pgTable("vendors", {
   id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
-  userId: varchar("user_id").notNull().references(() => users.id),
+  userId: integer("user_id").notNull().references(() => users.id),
   companyName: varchar("company_name").notNull(),
   businessLicense: varchar("business_license"),
   description: text("description"),
@@ -80,7 +80,7 @@ export const products = pgTable("products", {
 // Installers table
 export const installers = pgTable("installers", {
   id: serial("id").primaryKey(),
-  userId: varchar("user_id").notNull().references(() => users.id),
+  userId: integer("user_id").notNull().references(() => users.id),
   companyName: varchar("company_name").notNull(),
   experience: integer("experience_years"),
   totalInstallations: integer("total_installations").default(0),
@@ -117,7 +117,7 @@ export const orders = pgTable("orders", {
 // Cart items table
 export const cartItems = pgTable("cart_items", {
   id: serial("id").primaryKey(),
-  userId: varchar("user_id").notNull().references(() => users.id),
+  userId: integer("user_id").notNull().references(() => users.id),
   productId: integer("product_id").notNull().references(() => products.id),
   quantity: integer("quantity").default(1),
   createdAt: timestamp("created_at").defaultNow(),
