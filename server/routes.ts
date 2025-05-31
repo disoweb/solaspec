@@ -13,7 +13,7 @@ import {
   insertReviewSchema 
 } from "@shared/schema";
 import { z } from "zod";
-import { authMiddleware } from "./auth";
+// Remove this duplicate import since authenticate is already imported above
 import { db } from "./db";
 import { users, products, vendors, installers, orders, reviews, carts } from "../shared/schema";
 import { eq, desc, sql, and, ilike, or, count } from "drizzle-orm";
@@ -110,7 +110,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ message: "Logged out successfully" });
   });
 
-  app.get("/api/auth/user", authMiddleware, async (req: any, res) => {
+  app.get("/api/auth/user", authenticate, async (req: AuthenticatedRequest, res) => {
     try {
       const user = await db.select().from(users).where(eq(users.id, req.userId)).limit(1);
       if (!user[0]) {
@@ -124,58 +124,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/auth/register', async (req, res) => {
-    try {
-      const validatedData = insertUserSchema.parse(req.body);
-      const { user, token } = await AuthService.register(validatedData);
-
-      // Set HTTP-only cookie
-      res.cookie('auth_token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-      });
-
-      res.json({ user: { ...user, password: undefined } });
-    } catch (error: any) {
-      res.status(400).json({ message: error.message });
-    }
-  });
-
-  app.post('/api/auth/login', async (req, res) => {
-    try {
-      const { email, password } = req.body;
-      const { user, token } = await AuthService.login(email, password);
-
-      // Set HTTP-only cookie
-      res.cookie('auth_token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-      });
-
-      res.json({ user: { ...user, password: undefined } });
-    } catch (error: any) {
-      res.status(400).json({ message: error.message });
-    }
-  });
-
-  app.post('/api/auth/logout', (req, res) => {
-    res.clearCookie('auth_token');
-    res.json({ message: 'Logged out successfully' });
-  });
-
-  app.get('/api/auth/user', authenticate, async (req: AuthenticatedRequest, res) => {
-    try {
-      const user = req.user!;
-      res.json({ ...user, password: undefined });
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
+  // Authentication routes are handled above - removed duplicates
 
   // Product routes
   app.get('/api/products', async (req, res) => {
