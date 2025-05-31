@@ -31,8 +31,8 @@ export interface IStorage {
   // User operations (custom authentication)
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
-  updateUser(id: number, updates: Partial<InsertUser>): Promise<User>;
+  createUser(user: UpsertUser): Promise<User>;
+  updateUser(id: number, updates: Partial<UpsertUser>): Promise<User>;
   
   // Vendor operations
   createVendor(vendor: InsertVendor): Promise<Vendor>;
@@ -120,7 +120,7 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
-  async createUser(userData: InsertUser): Promise<User> {
+  async createUser(userData: UpsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
       .values(userData)
@@ -128,7 +128,7 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async updateUser(id: number, updates: Partial<InsertUser>): Promise<User> {
+  async updateUser(id: number, updates: Partial<UpsertUser>): Promise<User> {
     const [user] = await db
       .update(users)
       .set({ ...updates, updatedAt: new Date() })

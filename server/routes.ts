@@ -3,8 +3,8 @@ import { createServer, type Server } from "http";
 import cookieParser from "cookie-parser";
 import { storage } from "./storage";
 import { AuthService, authenticate, authorize, adminOnly, vendorOrAdmin, installerOrAdmin, type AuthenticatedRequest } from "./auth";
-import { insertUserSchema, insertVendorSchema, insertInstallerSchema } from "@shared/schema";
 import { 
+  insertUserSchema,
   insertVendorSchema, 
   insertProductSchema, 
   insertInstallerSchema, 
@@ -105,7 +105,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/products', isAuthenticated, async (req: any, res) => {
+  app.post('/api/products', authenticate, async (req: AuthenticatedRequest, res) => {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
@@ -149,7 +149,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/vendors', isAuthenticated, async (req: any, res) => {
+  app.post('/api/vendors', authenticate, async (req: AuthenticatedRequest, res) => {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
@@ -174,7 +174,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/vendors/profile', isAuthenticated, async (req: any, res) => {
+  app.get('/api/vendors/profile', authenticate, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const vendor = await storage.getVendorByUserId(userId);
@@ -202,7 +202,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/installers', isAuthenticated, async (req: any, res) => {
+  app.post('/api/installers', authenticate, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       
@@ -223,7 +223,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Cart routes
-  app.get('/api/cart', isAuthenticated, async (req: any, res) => {
+  app.get('/api/cart', authenticate, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const cartItems = await storage.getCartItems(userId);
@@ -234,7 +234,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/cart', isAuthenticated, async (req: any, res) => {
+  app.post('/api/cart', authenticate, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const cartItemData = insertCartItemSchema.parse({
@@ -253,7 +253,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/cart/:id', isAuthenticated, async (req, res) => {
+  app.put('/api/cart/:id', authenticate, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const { quantity } = req.body;
@@ -270,7 +270,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/cart/:id', isAuthenticated, async (req, res) => {
+  app.delete('/api/cart/:id', authenticate, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       await storage.removeFromCart(id);
@@ -282,7 +282,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Order routes
-  app.get('/api/orders', isAuthenticated, async (req: any, res) => {
+  app.get('/api/orders', authenticate, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
@@ -303,7 +303,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/orders', isAuthenticated, async (req: any, res) => {
+  app.post('/api/orders', authenticate, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       
@@ -335,7 +335,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/orders/:id', isAuthenticated, async (req: any, res) => {
+  app.put('/api/orders/:id', authenticate, async (req: any, res) => {
     try {
       const orderId = req.params.id;
       const userId = req.user.claims.sub;
@@ -365,7 +365,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Review routes
-  app.post('/api/reviews', isAuthenticated, async (req: any, res) => {
+  app.post('/api/reviews', authenticate, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       
@@ -397,7 +397,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Analytics routes
-  app.get('/api/analytics/vendor', isAuthenticated, async (req: any, res) => {
+  app.get('/api/analytics/vendor', authenticate, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
@@ -419,7 +419,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/analytics/admin', isAuthenticated, async (req: any, res) => {
+  app.get('/api/analytics/admin', authenticate, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
@@ -437,7 +437,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Wallet routes
-  app.get('/api/wallet/balance', isAuthenticated, async (req: any, res) => {
+  app.get('/api/wallet/balance', authenticate, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const balance = await storage.getWalletBalance(userId);
@@ -448,7 +448,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/wallet/transactions', isAuthenticated, async (req: any, res) => {
+  app.get('/api/wallet/transactions', authenticate, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const transactions = await storage.getWalletTransactions(userId);
