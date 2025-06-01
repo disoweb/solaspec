@@ -73,12 +73,17 @@ export const products = pgTable("products", {
   imageUrl: varchar("image_url"),
   inStock: boolean("in_stock").default(true),
   featured: boolean("featured").default(false),
+  trending: boolean("trending").default(false),
   stockQuantity: integer("stock_quantity").default(0),
   minimumOrderQuantity: integer("minimum_order_quantity").default(1),
   weight: decimal("weight", { precision: 8, scale: 2 }), // in kg
   dimensions: jsonb("dimensions"), // {length, width, height}
-  sku: varchar("sku"),
+  sku: varchar("sku").unique(),
   locations: text("locations").array(), // Available locations
+  category: varchar("category"),
+  installmentPrice: decimal("installment_price", { precision: 10, scale: 2 }),
+  discountPercentage: decimal("discount_percentage", { precision: 5, scale: 2 }),
+  tags: text("tags").array(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

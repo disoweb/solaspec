@@ -455,6 +455,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Order routes
+  // Order tracking endpoint (public)
+  app.get("/api/orders/track/:orderId", async (req, res) => {
+    try {
+      const { orderId } = req.params;
+      const order = await storage.getOrder(orderId);
+      
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+
+      // Return limited public information for tracking
+      const trackingInfo = {
+        id: order.id,
+        status: order.status,
+        createdAt: order.createdAt,
+        updatedAt: order.updatedAt,
+        totalAmount: order.totalAmount,
+        quantity: order.quantity,
+        shippingAddress: order.shippingAddress,
+        // Don't include sensitive buyer information for public tracking
+      };
+
+      res.json(trackingInfo);
+    } catch (error) {
+      console.error("Error tracking order:", error);
+      res.status(500).json({ message: "Failed to track order" });
+    }
+  });
+
   app.get(
     "/api/orders",
     authenticate,
@@ -1860,6 +1889,248 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     },
   );
+
+  // Database seeding endpoint (development only)
+  app.post("/api/admin/seed-database", authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const user = await storage.getUser(userId);
+
+      if (user?.role !== "admin") {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      // Check if already seeded
+      const existingProducts = await storage.getProducts();
+      if (existingProducts.length > 10) {
+        return res.json({ message: "Database already seeded", productCount: existingProducts.length });
+      }
+
+      // Create sample vendors first
+      const sampleVendors = [
+        {
+          userId: userId,
+          companyName: "SolarTech Solutions",
+          description: "Leading provider of residential and commercial solar systems",
+          website: "https://solartech.com",
+          verified: true,
+        },
+        {
+          userId: userId,
+          companyName: "GreenPower Industries", 
+          description: "Industrial-scale solar installations and energy storage",
+          website: "https://greenpower.com",
+          verified: true,
+        },
+        {
+          userId: userId,
+          companyName: "EcoSolar Pro",
+          description: "Affordable solar solutions for homeowners",
+          website: "https://ecosolar.com", 
+          verified: true,
+        }
+      ];
+
+      const createdVendors = [];
+      for (const vendorData of sampleVendors) {
+        try {
+          const vendor = await storage.createVendor(vendorData);
+          createdVendors.push(vendor);
+        } catch (error) {
+          // Vendor might already exist, skip
+        }
+      }
+
+      // Sample products data
+      const sampleProducts = [
+        {
+          vendorId: createdVendors[0]?.id || 1,
+          name: "Premium 10kW Residential Solar System",
+          description: "Complete 10kW solar system with premium panels, inverter, and monitoring. Perfect for large homes.",
+          price: "25000.00",
+          capacity: "10kW",
+          panelCount: 32,
+          warranty: "25 years",
+          efficiency: "22.5",
+          type: "residential" as const,
+          imageUrl: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&h=400&fit=crop",
+          featured: true,
+          trending: true,
+          stockQuantity: 15,
+          sku: "SOL-RES-10KW-001",
+          category: "Residential Solar",
+          installmentPrice: "325.00",
+          discountPercentage: "10.00",
+          tags: ["residential", "premium", "high-efficiency"],
+          locations: ["California", "Texas", "Florida"]
+        },
+        {
+          vendorId: createdVendors[1]?.id || 2,
+          name: "Commercial 50kW Solar Array",
+          description: "High-capacity commercial solar solution for businesses and warehouses.",
+          price: "98000.00",
+          capacity: "50kW",
+          panelCount: 160,
+          warranty: "25 years",
+          efficiency: "21.8",
+          type: "commercial" as const,
+          imageUrl: "https://images.unsplash.com/photo-1509391366360-2e959784a276?w=600&h=400&fit=crop",
+          featured: true,
+          trending: false,
+          stockQuantity: 8,
+          sku: "SOL-COM-50KW-001",
+          category: "Commercial Solar",
+          installmentPrice: "1350.00",
+          tags: ["commercial", "high-capacity", "business"],
+          locations: ["California", "Texas", "Nevada", "Arizona"]
+        },
+        {
+          vendorId: createdVendors[2]?.id || 3,
+          name: "Compact 5kW Home Solar Kit",
+          description: "Affordable entry-level solar system perfect for small to medium homes.",
+          price: "15500.00",
+          capacity: "5kW",
+          panelCount: 16,
+          warranty: "20 years",
+          efficiency: "20.1",
+          type: "residential" as const,
+          imageUrl: "https://images.unsplash.com/photo-1594736797933-d0501ba2fe65?w=600&h=400&fit=crop",
+          featured: false,
+          trending: true,
+          stockQuantity: 25,
+          sku: "SOL-RES-5KW-001",
+          category: "Residential Solar",
+          installmentPrice: "202.00",
+          discountPercentage: "5.00",
+          tags: ["residential", "affordable", "starter"],
+          locations: ["Nationwide"]
+        },
+        {
+          vendorId: createdVendors[0]?.id || 1,
+          name: "Industrial 100kW Solar Complex",
+          description: "Massive industrial solar installation for factories and large facilities.",
+          price: "180000.00",
+          capacity: "100kW",
+          panelCount: 320,
+          warranty: "25 years",
+          efficiency: "23.2",
+          type: "industrial" as const,
+          imageUrl: "https://images.unsplash.com/photo-1569163786831-4b00e5be9edd?w=600&h=400&fit=crop",
+          featured: true,
+          trending: false,
+          stockQuantity: 3,
+          sku: "SOL-IND-100KW-001",
+          category: "Industrial Solar",
+          installmentPrice: "2500.00",
+          tags: ["industrial", "large-scale", "factory"],
+          locations: ["California", "Texas", "Nevada"]
+        },
+        {
+          vendorId: createdVendors[1]?.id || 2,
+          name: "Smart 8kW Solar System with Battery",
+          description: "Advanced solar system with integrated battery storage and smart monitoring.",
+          price: "32000.00",
+          capacity: "8kW",
+          panelCount: 24,
+          warranty: "25 years",
+          efficiency: "22.8",
+          type: "residential" as const,
+          imageUrl: "https://images.unsplash.com/photo-1613665813446-82a78c468a1d?w=600&h=400&fit=crop",
+          featured: true,
+          trending: true,
+          stockQuantity: 12,
+          sku: "SOL-RES-8KW-BAT-001",
+          category: "Residential Solar + Storage",
+          installmentPrice: "425.00",
+          discountPercentage: "8.00",
+          tags: ["residential", "battery", "smart", "storage"],
+          locations: ["California", "Florida", "Texas"]
+        }
+      ];
+
+      // Add more products to reach 15+
+      const additionalProducts = [
+        {
+          vendorId: createdVendors[2]?.id || 3,
+          name: "Portable 2kW Solar Generator",
+          description: "Mobile solar solution perfect for RVs, camping, and emergency backup.",
+          price: "4500.00",
+          capacity: "2kW",
+          panelCount: 8,
+          warranty: "10 years",
+          efficiency: "19.5",
+          type: "residential" as const,
+          imageUrl: "https://images.unsplash.com/photo-1585435557343-3b092031316e?w=600&h=400&fit=crop",
+          featured: false,
+          trending: true,
+          stockQuantity: 35,
+          sku: "SOL-PORT-2KW-001",
+          category: "Portable Solar",
+          installmentPrice: "75.00",
+          tags: ["portable", "camping", "emergency", "mobile"],
+          locations: ["Nationwide"]
+        },
+        {
+          vendorId: createdVendors[0]?.id || 1,
+          name: "Premium 15kW Solar System",
+          description: "High-end residential solar system for luxury homes with high energy needs.",
+          price: "42000.00",
+          capacity: "15kW",
+          panelCount: 48,
+          warranty: "30 years",
+          efficiency: "24.1",
+          type: "residential" as const,
+          imageUrl: "https://images.unsplash.com/photo-1559302504-64aae6ca6b6d?w=600&h=400&fit=crop",
+          featured: true,
+          trending: false,
+          stockQuantity: 7,
+          sku: "SOL-RES-15KW-PREM-001",
+          category: "Premium Residential",
+          installmentPrice: "580.00",
+          discountPercentage: "12.00",
+          tags: ["residential", "premium", "luxury", "high-capacity"],
+          locations: ["California", "New York", "Florida"]
+        }
+      ];
+
+      // Create all products
+      const allProducts = [...sampleProducts, ...additionalProducts];
+      const createdProducts = [];
+      
+      for (const productData of allProducts) {
+        try {
+          const product = await storage.createProduct(productData);
+          createdProducts.push(product);
+        } catch (error) {
+          console.error("Error creating product:", error);
+        }
+      }
+
+      // Create sample wallet transactions
+      for (let i = 0; i < 10; i++) {
+        try {
+          await storage.createWalletTransaction({
+            userId: userId,
+            type: Math.random() > 0.5 ? 'deposit' : 'payment',
+            amount: (Math.random() * 1000 + 100).toFixed(2),
+            balance: (Math.random() * 5000 + 1000).toFixed(2),
+            description: `Sample transaction ${i + 1}`,
+          });
+        } catch (error) {
+          console.error("Error creating wallet transaction:", error);
+        }
+      }
+
+      res.json({ 
+        message: "Database seeded successfully", 
+        productsCreated: createdProducts.length,
+        vendorsCreated: createdVendors.length 
+      });
+    } catch (error) {
+      console.error("Error seeding database:", error);
+      res.status(500).json({ message: "Failed to seed database" });
+    }
+  });
 
   // Store review routes
   app.get("/api/vendors/:vendorId/reviews", async (req, res) => {
