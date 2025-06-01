@@ -351,5 +351,4 @@ export default function BuyerDashboard() {
     </div>
   );
 }
-export default BuyerDashboard;
 export { BuyerDashboard };
