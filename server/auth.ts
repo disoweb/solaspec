@@ -116,8 +116,10 @@ export const authenticate = async (req: AuthenticatedRequest, res: Response, nex
       return res.status(401).json({ message: "Invalid token" });
     }
 
-    const user = await storage.getUser(decoded.id);
-    if (!user || !user.isActive) {
+    // Use the correct property name from the JWT payload
+    const userId = decoded.id || decoded.userId;
+    const user = await storage.getUser(userId);
+    if (!user) {
       return res.status(401).json({ message: "User not found or inactive" });
     }
 
@@ -125,6 +127,7 @@ export const authenticate = async (req: AuthenticatedRequest, res: Response, nex
     req.userId = user.id;
     next();
   } catch (error) {
+    console.error("Authentication error:", error);
     return res.status(401).json({ message: "Authentication failed" });
   }
 };
