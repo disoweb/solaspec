@@ -8,6 +8,7 @@ import Landing from "./pages/landing";
 import Login from "./pages/login";
 import Register from "./pages/register";
 import Marketplace from "./pages/marketplace";
+import Categories from "./pages/categories";
 import ProductDetails from "./pages/product-details";
 import BuyerDashboard from "./pages/buyer-dashboard";
 import VendorDashboard from "./pages/vendor-dashboard";
@@ -28,6 +29,7 @@ function App() {
             <Route path="/login" component={Login} />
             <Route path="/register" component={Register} />
             <Route path="/marketplace" component={Marketplace} />
+            <Route path="/categories" component={Categories} />
             <Route path="/product/:id" component={ProductDetails} />
             <Route path="/buyer-dashboard" component={BuyerDashboard} />
             <Route path="/vendor-dashboard" component={VendorDashboard} />

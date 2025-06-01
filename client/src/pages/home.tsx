@@ -1,120 +1,190 @@
-import { useAuth } from "@/hooks/useAuth";
+
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Star, ShoppingCart, Zap, TrendingUp } from "lucide-react";
-import { Link } from "wouter";
+import { Search, Filter, TrendingUp, Star, MapPin, ShoppingCart, Eye, Zap, Shield, Award, Users, Package, Grid, List } from "lucide-react";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import ProductCard from "@/components/product-card";
+import { Link } from "wouter";
 
 export default function Home() {
-  const { user } = useAuth();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   const { data: featuredProducts, isLoading: productsLoading } = useQuery({
-    queryKey: ["/api/products?featured=true"],
+    queryKey: ["/api/products", "featured=true&limit=8"],
   });
 
-  const { data: cartItems } = useQuery({
-    queryKey: ["/api/cart"],
-    enabled: !!user,
+  const { data: categories } = useQuery({
+    queryKey: ["/api/categories"],
   });
 
-  const { data: orders } = useQuery({
-    queryKey: ["/api/orders"],
-    enabled: !!user,
+  const { data: topVendors } = useQuery({
+    queryKey: ["/api/vendors", "verified=true&limit=6"],
   });
 
-  const getDashboardPath = () => {
-    switch (user?.role) {
-      case 'vendor':
-        return '/vendor-dashboard';
-      case 'admin':
-        return '/admin-dashboard';
-      default:
-        return '/buyer-dashboard';
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      window.location.href = `/marketplace?search=${encodeURIComponent(searchTerm)}`;
     }
   };
+
+  const productCategories = [
+    {
+      id: "residential",
+      name: "Residential Solar",
+      description: "Home solar solutions",
+      image: "https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=300&h=200&fit=crop",
+      count: 150,
+    },
+    {
+      id: "commercial",
+      name: "Commercial Solar", 
+      description: "Business solar systems",
+      image: "https://images.unsplash.com/photo-1540574163026-643ea20ade25?w=300&h=200&fit=crop",
+      count: 89,
+    },
+    {
+      id: "industrial",
+      name: "Industrial Solar",
+      description: "Large-scale installations",
+      image: "https://images.unsplash.com/photo-1509391366360-2e959784a276?w=300&h=200&fit=crop",
+      count: 45,
+    },
+    {
+      id: "portable",
+      name: "Portable Solar",
+      description: "Mobile solar solutions",
+      image: "https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=300&h=200&fit=crop",
+      count: 67,
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
       
-      {/* Welcome Section */}
-      <section className="solar-gradient py-12">
+      {/* Hero Section with Search */}
+      <section className="solar-gradient py-16">
         <div className="max-w-7xl mx-auto container-mobile">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
-              Welcome back, {user?.firstName || 'Solar Enthusiast'}!
+          <div className="text-center mb-12">
+            <h1 className="text-4xl lg:text-6xl font-bold text-foreground mb-6">
+              Solar Energy <span className="text-blue-600">Marketplace</span>
             </h1>
-            <p className="text-xl text-muted-foreground mb-6">
-              Your journey to sustainable energy continues here
+            <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
+              Connect with verified solar vendors, certified installers, and find the perfect solar solution for your needs.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/marketplace">
-                <Button size="lg" className="solar-bg hover:bg-primary/90">
-                  Browse Marketplace
+            {/* Search Bar */}
+            <form onSubmit={handleSearch} className="max-w-2xl mx-auto mb-8">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
+                <Input
+                  placeholder="Search solar panels, inverters, batteries..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-12 pr-24 h-14 text-lg"
+                />
+                <Button 
+                  type="submit"
+                  className="absolute right-2 top-2 h-10 bg-blue-600 hover:bg-blue-700"
+                >
+                  Search
                 </Button>
-              </Link>
-              <Link href={getDashboardPath()}>
-                <Button variant="outline" size="lg" className="solar-border solar-text hover:bg-accent">
-                  Go to Dashboard
-                </Button>
-              </Link>
-            </div>
-          </div>
+              </div>
+            </form>
 
-          {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
-            <Card>
-              <CardContent className="p-6 text-center">
-                <ShoppingCart className="w-8 h-8 solar-text mx-auto mb-2" />
-                <div className="text-2xl font-bold text-foreground">{cartItems?.length || 0}</div>
-                <div className="text-sm text-muted-foreground">Items in Cart</div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-6 text-center">
-                <Zap className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-foreground">{orders?.length || 0}</div>
-                <div className="text-sm text-muted-foreground">Orders Placed</div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-6 text-center">
-                <TrendingUp className="w-8 h-8 text-yellow-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-foreground">
-                  ${orders?.reduce((sum: number, order: any) => sum + parseFloat(order.totalAmount || 0), 0).toLocaleString() || '0'}
-                </div>
-                <div className="text-sm text-muted-foreground">Total Invested</div>
-              </CardContent>
-            </Card>
+            <div className="flex flex-wrap justify-center gap-4">
+              <Button variant="outline" asChild>
+                <Link href="/marketplace">Browse All Products</Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link href="/installers">Find Installers</Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link href="/register">Become a Vendor</Link>
+              </Button>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Featured Products */}
+      {/* Categories Section */}
       <section className="py-16 bg-card">
         <div className="max-w-7xl mx-auto container-mobile">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-3xl font-bold text-foreground mb-2">Featured Solar Systems</h2>
-              <p className="text-muted-foreground">Handpicked systems from our top-rated vendors</p>
-            </div>
-            <Link href="/marketplace">
-              <Button variant="outline" className="solar-border solar-text hover:bg-accent">
-                View All
-              </Button>
-            </Link>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-foreground mb-4">Shop by Category</h2>
+            <p className="text-xl text-muted-foreground">Find the perfect solar solution for your needs</p>
           </div>
-          
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {productCategories.map((category) => (
+              <Link key={category.id} href={`/marketplace?type=${category.id}`}>
+                <Card className="overflow-hidden hover:shadow-xl transition-all cursor-pointer group">
+                  <div className="relative h-48">
+                    <img 
+                      src={category.image}
+                      alt={category.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                    />
+                    <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors" />
+                    <div className="absolute bottom-4 left-4 text-white">
+                      <h3 className="text-xl font-bold">{category.name}</h3>
+                      <p className="text-sm opacity-90">{category.description}</p>
+                    </div>
+                    <Badge className="absolute top-4 right-4 bg-white/90 text-black">
+                      {category.count} products
+                    </Badge>
+                  </div>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Products Section */}
+      <section className="py-16">
+        <div className="max-w-7xl mx-auto container-mobile">
+          <div className="flex items-center justify-between mb-12">
+            <div>
+              <h2 className="text-3xl font-bold text-foreground mb-4">Featured Products</h2>
+              <p className="text-xl text-muted-foreground">Top-rated systems from verified vendors</p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="flex border rounded-lg">
+                <Button
+                  variant={viewMode === "grid" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setViewMode("grid")}
+                  className="rounded-r-none"
+                >
+                  <Grid className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={viewMode === "list" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setViewMode("list")}
+                  className="rounded-l-none"
+                >
+                  <List className="w-4 h-4" />
+                </Button>
+              </div>
+              <Button variant="outline" asChild>
+                <Link href="/marketplace">View All</Link>
+              </Button>
+            </div>
+          </div>
+
           {productsLoading ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(3)].map((_, i) => (
+            <div className={viewMode === "grid" ? "grid md:grid-cols-2 lg:grid-cols-4 gap-6" : "space-y-6"}>
+              {[...Array(8)].map((_, i) => (
                 <Card key={i} className="animate-pulse">
                   <div className="h-48 bg-muted rounded-t-lg"></div>
                   <CardContent className="p-6">
@@ -125,117 +195,131 @@ export default function Home() {
                 </Card>
               ))}
             </div>
-          ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {featuredProducts?.slice(0, 3).map((product: any) => (
-                <ProductCard key={product.id} product={product} />
+          ) : featuredProducts && featuredProducts.length > 0 ? (
+            <div className={viewMode === "grid" ? "grid md:grid-cols-2 lg:grid-cols-4 gap-6" : "space-y-6"}>
+              {featuredProducts.map((product: any) => (
+                <ProductCard 
+                  key={product.id} 
+                  product={product} 
+                  layout={viewMode}
+                />
               ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-foreground mb-2">No Featured Products</h3>
+              <p className="text-muted-foreground">Check back later for featured products.</p>
             </div>
           )}
         </div>
       </section>
 
-      {/* Quick Actions */}
-      <section className="py-16 bg-muted/30">
+      {/* Top Vendors Section */}
+      <section className="py-16 bg-card">
         <div className="max-w-7xl mx-auto container-mobile">
-          <h2 className="text-3xl font-bold text-foreground text-center mb-12">Quick Actions</h2>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Link href="/marketplace">
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-                <CardContent className="p-6 text-center">
-                  <div className="w-12 h-12 solar-bg rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <ShoppingCart className="w-6 h-6 text-primary-foreground" />
-                  </div>
-                  <h3 className="font-semibold text-foreground mb-2">Browse Products</h3>
-                  <p className="text-sm text-muted-foreground">Explore our solar system catalog</p>
-                </CardContent>
-              </Card>
-            </Link>
-            
-            <Link href="/installers">
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-                <CardContent className="p-6 text-center">
-                  <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <Zap className="w-6 h-6 text-white" />
-                  </div>
-                  <h3 className="font-semibold text-foreground mb-2">Find Installers</h3>
-                  <p className="text-sm text-muted-foreground">Connect with certified professionals</p>
-                </CardContent>
-              </Card>
-            </Link>
-            
-            {user?.role === 'vendor' && (
-              <Link href="/vendor-dashboard">
-                <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-                  <CardContent className="p-6 text-center">
-                    <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center mx-auto mb-4">
-                      <TrendingUp className="w-6 h-6 text-white" />
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-foreground mb-4">Top Verified Vendors</h2>
+            <p className="text-xl text-muted-foreground">Trusted partners in solar energy</p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {topVendors?.map((vendor: any) => (
+              <Card key={vendor.id} className="hover:shadow-lg transition-shadow">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                        <Zap className="w-6 h-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-foreground">{vendor.companyName}</h3>
+                        <div className="flex items-center space-x-1">
+                          <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                          <span className="text-sm text-muted-foreground">{vendor.rating || "4.8"}</span>
+                        </div>
+                      </div>
                     </div>
-                    <h3 className="font-semibold text-foreground mb-2">Vendor Dashboard</h3>
-                    <p className="text-sm text-muted-foreground">Manage your products and sales</p>
-                  </CardContent>
-                </Card>
-              </Link>
-            )}
-            
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-              <CardContent className="p-6 text-center">
-                <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <Star className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="font-semibold text-foreground mb-2">Get Support</h3>
-                <p className="text-sm text-muted-foreground">Contact our expert team</p>
-              </CardContent>
-            </Card>
+                    <Badge className="bg-green-100 text-green-800">Verified</Badge>
+                  </div>
+                  <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
+                    {vendor.description || "Professional solar solutions provider with years of experience."}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">
+                      {vendor.totalReviews || "0"} reviews
+                    </span>
+                    <Button variant="outline" size="sm" asChild>
+                      <Link href={`/vendors/${vendor.id}`}>View Store</Link>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Recent Activity */}
-      {orders && orders.length > 0 && (
-        <section className="py-16 bg-card">
-          <div className="max-w-7xl mx-auto container-mobile">
-            <h2 className="text-3xl font-bold text-foreground mb-8">Recent Activity</h2>
-            
-            <div className="space-y-4">
-              {orders.slice(0, 3).map((order: any) => (
-                <Card key={order.id}>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-semibold text-foreground">Order #{order.id.slice(0, 8)}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Placed on {new Date(order.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-lg font-bold text-foreground">
-                          ${parseFloat(order.totalAmount).toLocaleString()}
-                        </div>
-                        <Badge 
-                          variant={order.status === 'completed' ? 'default' : 'secondary'}
-                          className={order.status === 'completed' ? 'bg-green-500' : ''}
-                        >
-                          {order.status}
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            
-            <div className="text-center mt-8">
-              <Link href={getDashboardPath()}>
-                <Button variant="outline" className="solar-border solar-text hover:bg-accent">
-                  View All Activity
-                </Button>
-              </Link>
-            </div>
+      {/* Trust & Security Section */}
+      <section className="py-16">
+        <div className="max-w-7xl mx-auto container-mobile">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-foreground mb-4">Why Choose Solaspec?</h2>
+            <p className="text-xl text-muted-foreground">Your trusted solar marketplace</p>
           </div>
-        </section>
-      )}
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {[
+              {
+                icon: Shield,
+                title: "Secure Payments",
+                description: "Escrow protection and milestone-based payments ensure your money is safe"
+              },
+              {
+                icon: Award,
+                title: "Verified Vendors",
+                description: "All vendors are thoroughly vetted and verified for quality assurance"
+              },
+              {
+                icon: Users,
+                title: "Expert Installers",
+                description: "Certified professionals with proven track records"
+              },
+              {
+                icon: Star,
+                title: "Quality Guarantee",
+                description: "30% tax credits and comprehensive warranties on all systems"
+              }
+            ].map((feature, index) => (
+              <div key={feature.title} className="text-center">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <feature.icon className="w-8 h-8 text-blue-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">{feature.title}</h3>
+                <p className="text-muted-foreground">{feature.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-16 bg-blue-600 text-white">
+        <div className="max-w-7xl mx-auto container-mobile text-center">
+          <h2 className="text-3xl font-bold mb-4">Ready to Go Solar?</h2>
+          <p className="text-xl mb-8 opacity-90">
+            Join thousands of satisfied customers who've made the switch to clean energy
+          </p>
+          <div className="flex flex-wrap justify-center gap-4">
+            <Button size="lg" variant="secondary" asChild>
+              <Link href="/marketplace">Shop Solar Systems</Link>
+            </Button>
+            <Button size="lg" variant="outline" className="text-white border-white hover:bg-white hover:text-blue-600" asChild>
+              <Link href="/register">Become a Vendor</Link>
+            </Button>
+          </div>
+        </div>
+      </section>
 
       <Footer />
     </div>

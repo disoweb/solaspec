@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -7,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -25,9 +27,17 @@ import {
   AlertTriangle,
   Edit,
   Trash2,
-  Eye
+  Eye,
+  Plus,
+  Download,
+  Upload,
+  FileText,
+  DollarSign,
+  Clock,
+  CheckCircle,
+  XCircle,
+  RefreshCw
 } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function VendorDashboard() {
   const { user } = useAuth();
@@ -35,19 +45,7 @@ export default function VendorDashboard() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("overview");
   const [showProductForm, setShowProductForm] = useState(false);
-  const [inventoryAlerts, setInventoryAlerts] = useState([
-    { id: 1, message: "Low stock for Product A" },
-    { id: 2, message: "Product B is out of stock" },
-  ]);
-  const [inventory, setInventory] = useState([
-    { id: 1, productName: "Solar Panel 300W", sku: "SP300", quantity: 50, reservedQuantity: 10, minStockLevel: 5 },
-    { id: 2, productName: "Inverter 5kW", sku: "INV5", quantity: 20, reservedQuantity: 5, minStockLevel: 2 },
-  ]);
-  const [escrowAccounts, setEscrowAccounts] = useState([
-    { id: 1, orderId: "1234", totalAmount: 1000, heldAmount: 1000, releasedAmount: 0, customerName: "John Doe", status: "funded" },
-    { id: 2, orderId: "5678", totalAmount: 2500, heldAmount: 2500, releasedAmount: 0, customerName: "Jane Smith", status: "funded" },
-    { id: 3, orderId: "9101", totalAmount: 1500, heldAmount: 0, releasedAmount: 1500, customerName: "Alice Johnson", status: "completed" },
-  ]);
+  const [editingProduct, setEditingProduct] = useState<any>(null);
 
   // Check if user has vendor role
   const { data: vendor } = useQuery({
@@ -62,6 +60,21 @@ export default function VendorDashboard() {
 
   const { data: orders } = useQuery({
     queryKey: ["/api/orders"],
+    enabled: !!vendor?.id,
+  });
+
+  const { data: inventory } = useQuery({
+    queryKey: ["/api/inventory"],
+    enabled: !!vendor?.id,
+  });
+
+  const { data: inventoryAlerts } = useQuery({
+    queryKey: ["/api/inventory/alerts"],
+    enabled: !!vendor?.id,
+  });
+
+  const { data: escrowAccounts } = useQuery({
+    queryKey: ["/api/escrow"],
     enabled: !!vendor?.id,
   });
 
@@ -92,7 +105,10 @@ export default function VendorDashboard() {
   const tabs = [
     { id: "overview", label: "Overview", icon: BarChart3 },
     { id: "products", label: "Products", icon: Package },
-    { id: "orders", label: "Orders", icon: Package },
+    { id: "inventory", label: "Inventory", icon: Package },
+    { id: "orders", label: "Orders", icon: FileText },
+    { id: "escrow", label: "Escrow & Payments", icon: Shield },
+    { id: "analytics", label: "Analytics", icon: TrendingUp },
     { id: "settings", label: "Settings", icon: Settings },
   ];
 
@@ -110,24 +126,40 @@ export default function VendorDashboard() {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex flex-wrap gap-2 mb-8 border-b">
-          {tabs.map((tab) => (
-            <Button
-              key={tab.id}
-              variant={activeTab === tab.id ? "default" : "ghost"}
-              onClick={() => setActiveTab(tab.id)}
-              className="flex items-center space-x-2"
-            >
-              <tab.icon className="w-4 h-4" />
-              <span>{tab.label}</span>
-            </Button>
-          ))}
-        </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-7">
+            {tabs.map((tab) => (
+              <TabsTrigger key={tab.id} value={tab.id} className="flex items-center space-x-2">
+                <tab.icon className="w-4 h-4" />
+                <span className="hidden md:inline">{tab.label}</span>
+              </TabsTrigger>
+            ))}
+          </TabsList>
 
-        {/* Tab Content */}
-        {activeTab === "overview" && (
-          <div className="space-y-8">
+          <TabsContent value="overview" className="space-y-8">
             <VendorStats />
+
+            {/* Inventory Alerts */}
+            {inventoryAlerts && inventoryAlerts.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <AlertTriangle className="w-5 h-5 text-yellow-500" />
+                    <span>Inventory Alerts</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {inventoryAlerts.map((alert: any) => (
+                      <div key={alert.id} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                        <span className="text-sm">{alert.message}</span>
+                        <Button size="sm" variant="outline">Mark as Read</Button>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Quick Actions */}
             <Card>
@@ -135,16 +167,22 @@ export default function VendorDashboard() {
                 <CardTitle>Quick Actions</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <Button 
                     className="h-24 flex flex-col space-y-2"
-                    onClick={() => {
-                      setActiveTab("products");
-                      setShowProductForm(true);
-                    }}
+                    onClick={() => setActiveTab("products")}
                   >
                     <Plus className="w-6 h-6" />
-                    <span>Add New Product</span>
+                    <span>Add Product</span>
+                  </Button>
+
+                  <Button 
+                    variant="outline" 
+                    className="h-24 flex flex-col space-y-2"
+                    onClick={() => setActiveTab("inventory")}
+                  >
+                    <Package className="w-6 h-6" />
+                    <span>Manage Inventory</span>
                   </Button>
 
                   <Button 
@@ -152,17 +190,17 @@ export default function VendorDashboard() {
                     className="h-24 flex flex-col space-y-2"
                     onClick={() => setActiveTab("orders")}
                   >
-                    <Package className="w-6 h-6" />
+                    <FileText className="w-6 h-6" />
                     <span>View Orders</span>
                   </Button>
 
                   <Button 
                     variant="outline" 
                     className="h-24 flex flex-col space-y-2"
-                    onClick={() => setActiveTab("settings")}
+                    onClick={() => setActiveTab("escrow")}
                   >
-                    <Settings className="w-6 h-6" />
-                    <span>Update Profile</span>
+                    <DollarSign className="w-6 h-6" />
+                    <span>Check Payments</span>
                   </Button>
                 </div>
               </CardContent>
@@ -196,12 +234,32 @@ export default function VendorDashboard() {
                 </CardContent>
               </Card>
             )}
-          </div>
-        )}
+          </TabsContent>
 
-        {activeTab === "products" && <ProductsTab vendor={vendor} />}
-        {activeTab === "orders" && <OrdersTab />}
-        {activeTab === "settings" && <SettingsTab vendor={vendor} />}
+          <TabsContent value="products" className="space-y-6">
+            <ProductsTab vendor={vendor} />
+          </TabsContent>
+
+          <TabsContent value="inventory" className="space-y-6">
+            <InventoryTab vendor={vendor} inventory={inventory} />
+          </TabsContent>
+
+          <TabsContent value="orders" className="space-y-6">
+            <OrdersTab orders={orders} />
+          </TabsContent>
+
+          <TabsContent value="escrow" className="space-y-6">
+            <EscrowTab escrowAccounts={escrowAccounts} />
+          </TabsContent>
+
+          <TabsContent value="analytics" className="space-y-6">
+            <AnalyticsTab vendor={vendor} />
+          </TabsContent>
+
+          <TabsContent value="settings" className="space-y-6">
+            <SettingsTab vendor={vendor} />
+          </TabsContent>
+        </Tabs>
       </div>
 
       <Footer />
@@ -263,6 +321,10 @@ function ProductsTab({ vendor }: { vendor: any }) {
       capacity: formData.get("capacity"),
       type: formData.get("type"),
       imageUrl: formData.get("imageUrl"),
+      stockQuantity: formData.get("stockQuantity"),
+      minimumOrderQuantity: formData.get("minimumOrderQuantity"),
+      warranty: formData.get("warranty"),
+      efficiency: formData.get("efficiency"),
       locations: formData.get("locations")?.toString().split(",").map(l => l.trim()),
     };
     createProductMutation.mutate(productData);
@@ -284,11 +346,21 @@ function ProductsTab({ vendor }: { vendor: any }) {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-foreground">My Products</h2>
-        <Button onClick={() => setShowForm(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Product
-        </Button>
+        <h2 className="text-2xl font-bold text-foreground">Product Management</h2>
+        <div className="flex space-x-2">
+          <Button variant="outline">
+            <Download className="w-4 h-4 mr-2" />
+            Export
+          </Button>
+          <Button variant="outline">
+            <Upload className="w-4 h-4 mr-2" />
+            Import
+          </Button>
+          <Button onClick={() => setShowForm(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Product
+          </Button>
+        </div>
       </div>
 
       {showForm && (
@@ -300,13 +372,13 @@ function ProductsTab({ vendor }: { vendor: any }) {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Product Name</label>
+                  <label className="block text-sm font-medium mb-1">Product Name *</label>
                   <Input name="name" required />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Price ($)</label>
-                  <Input name="price" type="number" required />
+                  <label className="block text-sm font-medium mb-1">Price ($) *</label>
+                  <Input name="price" type="number" step="0.01" required />
                 </div>
 
                 <div>
@@ -315,7 +387,7 @@ function ProductsTab({ vendor }: { vendor: any }) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Type</label>
+                  <label className="block text-sm font-medium mb-1">Type *</label>
                   <Select name="type" required>
                     <SelectTrigger>
                       <SelectValue placeholder="Select type" />
@@ -327,10 +399,30 @@ function ProductsTab({ vendor }: { vendor: any }) {
                     </SelectContent>
                   </Select>
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Stock Quantity</label>
+                  <Input name="stockQuantity" type="number" min="0" />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Minimum Order Quantity</label>
+                  <Input name="minimumOrderQuantity" type="number" min="1" defaultValue="1" />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Warranty</label>
+                  <Input name="warranty" placeholder="e.g., 25 years" />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Efficiency (%)</label>
+                  <Input name="efficiency" type="number" step="0.01" min="0" max="100" />
+                </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Description</label>
+                <label className="block text-sm font-medium mb-1">Description *</label>
                 <Textarea name="description" required />
               </div>
 
@@ -372,7 +464,7 @@ function ProductsTab({ vendor }: { vendor: any }) {
                         ${parseFloat(product.price).toLocaleString()}
                       </span>
                       <Badge variant={product.inStock ? "default" : "destructive"}>
-                        {product.inStock ? "In Stock" : "Out of Stock"}
+                        {product.stockQuantity || 0} in stock
                       </Badge>
                     </div>
                   </div>
@@ -412,206 +504,206 @@ function ProductsTab({ vendor }: { vendor: any }) {
   );
 }
 
-// Orders Tab Component
-function OrdersTab() {
-  const { data: orders, isLoading } = useQuery({
-    queryKey: ["/api/orders"],
-  });
+// Inventory Tab Component
+function InventoryTab({ vendor, inventory }: { vendor: any; inventory: any[] }) {
+  const { toast } = useToast();
+  
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Inventory Management</h2>
+        <Button>
+          <Plus className="w-4 h-4 mr-2" />
+          Add Stock
+        </Button>
+      </div>
 
-  if (isLoading) {
-    return <div className="h-32 bg-muted rounded animate-pulse"></div>;
+      <Card>
+        <CardHeader>
+          <CardTitle>Current Inventory</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-2">Product</th>
+                  <th className="text-left p-2">SKU</th>
+                  <th className="text-left p-2">Stock</th>
+                  <th className="text-left p-2">Reserved</th>
+                  <th className="text-left p-2">Available</th>
+                  <th className="text-left p-2">Status</th>
+                  <th className="text-left p-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {inventory?.map((item: any) => (
+                  <tr key={item.id} className="border-b">
+                    <td className="p-2">{item.productName}</td>
+                    <td className="p-2">{item.sku}</td>
+                    <td className="p-2">{item.quantity}</td>
+                    <td className="p-2">{item.reservedQuantity}</td>
+                    <td className="p-2">{item.quantity - item.reservedQuantity}</td>
+                    <td className="p-2">
+                      <Badge variant={item.quantity <= item.minStockLevel ? "destructive" : "default"}>
+                        {item.quantity <= item.minStockLevel ? "Low Stock" : "In Stock"}
+                      </Badge>
+                    </td>
+                    <td className="p-2">
+                      <Button size="sm" variant="outline">Update</Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Orders Tab Component
+function OrdersTab({ orders }: { orders: any[] }) {
+  if (!orders || orders.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-center">
+          <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">No orders yet</p>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-foreground">Order Management</h2>
 
-      {orders && orders.length > 0 ? (
-        <div className="space-y-4">
-          {orders.map((order: any) => (
-            <Card key={order.id}>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
+      <div className="space-y-4">
+        {orders.map((order: any) => (
+          <Card key={order.id}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-foreground">Order #{order.id.slice(0, 8)}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {new Date(order.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold text-foreground">
+                    ${parseFloat(order.totalAmount).toLocaleString()}
+                  </p>
+                  <Badge variant="secondary">{order.status}</Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Escrow Tab Component
+function EscrowTab({ escrowAccounts }: { escrowAccounts: any[] }) {
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Escrow & Payments</h2>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Active Escrow Accounts</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {escrowAccounts?.map((account: any) => (
+              <div key={account.id} className="border rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold">Order #{account.orderId}</h3>
+                  <Badge variant={
+                    account.status === 'completed' ? 'default' : 
+                    account.status === 'funded' ? 'secondary' : 'outline'
+                  }>
+                    {account.status}
+                  </Badge>
+                </div>
+                <div className="grid md:grid-cols-4 gap-4 text-sm">
                   <div>
-                    <h3 className="font-semibold text-foreground">Order #{order.id.slice(0, 8)}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(order.createdAt).toLocaleDateString()}
-                    </p>
+                    <p className="text-muted-foreground">Total Amount</p>
+                    <p className="font-medium">${account.totalAmount}</p>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-foreground">
-                      ${parseFloat(order.totalAmount).toLocaleString()}
-                    </p>
-                    <Badge variant="secondary">{order.status}</Badge>
+                  <div>
+                    <p className="text-muted-foreground">Held Amount</p>
+                    <p className="font-medium">${account.heldAmount}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Released Amount</p>
+                    <p className="font-medium">${account.releasedAmount}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Customer</p>
+                    <p className="font-medium">{account.customerName}</p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <Card>
-          <CardContent className="p-6 text-center">
-            <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">No orders yet</p>
-          </CardContent>
-        </Card>
-      )}
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Analytics Tab Component
+function AnalyticsTab({ vendor }: { vendor: any }) {
+  return (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold">Analytics & Reports</h2>
+      
+      <Card>
+        <CardContent className="p-6 text-center">
+          <BarChart3 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-foreground mb-2">Advanced Analytics</h3>
+          <p className="text-muted-foreground mb-4">
+            Detailed analytics and reporting features coming soon.
+          </p>
+          <Button variant="outline">View Reports</Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
 
 // Settings Tab Component  
 function SettingsTab({ vendor }: { vendor: any }) {
-  const [inventoryAlerts, setInventoryAlerts] = useState([
-    { id: 1, message: "Low stock for Product A" },
-    { id: 2, message: "Product B is out of stock" },
-  ]);
-  const [inventory, setInventory] = useState([
-    { id: 1, productName: "Solar Panel 300W", sku: "SP300", quantity: 50, reservedQuantity: 10, minStockLevel: 5 },
-    { id: 2, productName: "Inverter 5kW", sku: "INV5", quantity: 20, reservedQuantity: 5, minStockLevel: 2 },
-  ]);
-  const [escrowAccounts, setEscrowAccounts] = useState([
-    { id: 1, orderId: "1234", totalAmount: 1000, heldAmount: 1000, releasedAmount: 0, customerName: "John Doe", status: "funded" },
-    { id: 2, orderId: "5678", totalAmount: 2500, heldAmount: 2500, releasedAmount: 0, customerName: "Jane Smith", status: "funded" },
-    { id: 3, orderId: "9101", totalAmount: 1500, heldAmount: 0, releasedAmount: 1500, customerName: "Alice Johnson", status: "completed" },
-  ]);
   return (
-    <Tabs defaultValue="settings" className="w-full">
-      <TabsList>
-        <TabsTrigger value="inventory">Inventory</TabsTrigger>
-        <TabsTrigger value="escrow">Escrow</TabsTrigger>
-        <TabsTrigger value="settings">Settings</TabsTrigger>
-      </TabsList>
-        <TabsContent value="inventory" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold">Inventory Management</h2>
-              <Button>Add Stock</Button>
-            </div>
-
-            {/* Inventory Alerts */}
-            {inventoryAlerts && inventoryAlerts.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <AlertTriangle className="w-5 h-5 text-yellow-500" />
-                    <span>Inventory Alerts</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {inventoryAlerts.map((alert: any) => (
-                      <div key={alert.id} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-                        <span className="text-sm">{alert.message}</span>
-                        <Button size="sm" variant="outline">Mark as Read</Button>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Inventory Table */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Current Inventory</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left p-2">Product</th>
-                        <th className="text-left p-2">SKU</th>
-                        <th className="text-left p-2">Stock</th>
-                        <th className="text-left p-2">Reserved</th>
-                        <th className="text-left p-2">Available</th>
-                        <th className="text-left p-2">Status</th>
-                        <th className="text-left p-2">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {inventory?.map((item: any) => (
-                        <tr key={item.id} className="border-b">
-                          <td className="p-2">{item.productName}</td>
-                          <td className="p-2">{item.sku}</td>
-                          <td className="p-2">{item.quantity}</td>
-                          <td className="p-2">{item.reservedQuantity}</td>
-                          <td className="p-2">{item.quantity - item.reservedQuantity}</td>
-                          <td className="p-2">
-                            <Badge variant={item.quantity <= item.minStockLevel ? "destructive" : "default"}>
-                              {item.quantity <= item.minStockLevel ? "Low Stock" : "In Stock"}
-                            </Badge>
-                          </td>
-                          <td className="p-2">
-                            <Button size="sm" variant="outline">Update</Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="escrow" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold">Escrow Accounts</h2>
-            </div>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Active Escrow Accounts</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {escrowAccounts?.map((account: any) => (
-                    <div key={account.id} className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-semibold">Order #{account.orderId}</h3>
-                        <Badge variant={
-                          account.status === 'completed' ? 'default' : 
-                          account.status === 'funded' ? 'secondary' : 'outline'
-                        }>
-                          {account.status}
-                        </Badge>
-                      </div>
-                      <div className="grid md:grid-cols-4 gap-4 text-sm">
-                        <div>
-                          <p className="text-muted-foreground">Total Amount</p>
-                          <p className="font-medium">${account.totalAmount}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Held Amount</p>
-                          <p className="font-medium">${account.heldAmount}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Released Amount</p>
-                          <p className="font-medium">${account.releasedAmount}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Customer</p>
-                          <p className="font-medium">{account.customerName}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="settings" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Vendor Settings</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Vendor settings and profile management coming soon.</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-    </Tabs>
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold">Vendor Settings</h2>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Store Information</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Company Name</label>
+            <Input defaultValue={vendor?.companyName} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Description</label>
+            <Textarea defaultValue={vendor?.description} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Website</label>
+            <Input defaultValue={vendor?.website} />
+          </div>
+          <Button>Update Profile</Button>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
