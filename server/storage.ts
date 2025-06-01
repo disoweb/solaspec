@@ -262,6 +262,9 @@ export interface IStorage {
 
   // Product operations by vendor
   // Product operations
+  getOrdersByParentId(parentOrderId: string): Promise<Order[]>;
+  getParentOrderSummary(parentOrderId: string): Promise<any>;
+  getOrderAnalytics(filters?: { excludeParentOrders?: boolean }): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -543,6 +546,78 @@ export class DatabaseStorage implements IStorage {
 
   async clearCart(userId: string): Promise<void> {
     await db.delete(cartItems).where(eq(cartItems.userId, userId));
+  }
+
+  // Multi-vendor order support
+  async getOrdersByParentId(parentOrderId: string): Promise<Order[]> {
+    return await db
+      .select()
+      .from(orders)
+      .where(sql`notes LIKE '%${parentOrderId}%'`)
+      .orderBy(desc(orders.createdAt));
+  }
+
+  async getParentOrderSummary(parentOrderId: string) {
+    const subOrders = await this.getOrdersByParentId(parentOrderId);
+
+    const summary = {
+      parentOrderId,
+      totalSubOrders: subOrders.length,
+      totalAmount: subOrders.reduce((sum, order) => sum + parseFloat(order.totalAmount), 0),
+      overallStatus: this.calculateOverallStatus(subOrders),
+      subOrders: subOrders.map(order => ({
+        id: order.id,
+        vendorId: order.vendorId,
+        status: order.status,
+        totalAmount: order.totalAmount,
+        createdAt: order.createdAt,
+        updatedAt: order.updatedAt
+      }))
+    };
+
+    return summary;
+  }
+
+  private calculateOverallStatus(subOrders: Order[]): string {
+    if (subOrders.length === 0) return 'unknown';
+
+    const statuses = subOrders.map(order => order.status);
+
+    if (statuses.every(status => status === 'completed')) return 'completed';
+    if (statuses.every(status => status === 'cancelled')) return 'cancelled';
+    if (statuses.some(status => status === 'cancelled')) return 'partially_cancelled';
+    if (statuses.some(status => status === 'installing' || status === 'paid')) return 'in_progress';
+    if (statuses.every(status => status === 'pending')) return 'pending';
+
+    return 'mixed';
+  }
+
+  // Enhanced order analytics (excluding parent orders)
+  async getOrderAnalytics(filters?: { excludeParentOrders?: boolean }) {
+    let query = db.select().from(orders);
+
+    if (filters?.excludeParentOrders) {
+      // Exclude orders that are parent orders (orders with no actual products)
+      query = query.where(sql`notes NOT LIKE 'Parent order%'`);
+    }
+
+    const orders = await query;
+
+    return {
+      totalOrders: orders.length,
+      totalRevenue: orders.reduce((sum, order) => sum + parseFloat(order.totalAmount), 0),
+      averageOrderValue: orders.length > 0 ? 
+        orders.reduce((sum, order) => sum + parseFloat(order.totalAmount), 0) / orders.length : 0,
+      statusBreakdown: this.getStatusBreakdown(orders)
+    };
+  }
+
+  private getStatusBreakdown(orders: Order[]) {
+    const breakdown: { [key: string]: number } = {};
+    orders.forEach(order => {
+      breakdown[order.status] = (breakdown[order.status] || 0) + 1;
+    });
+    return breakdown;
   }
 
   // Wallet operations
@@ -937,7 +1012,7 @@ export class DatabaseStorage implements IStorage {
   async assignVendorToGroup(vendorId: number, groupId: number) {
     // Remove existing memberships first
     await db.delete(vendorGroupMemberships).where(eq(vendorGroupMemberships.vendorId, vendorId));
-    
+
     // Add new membership
     const [membership] = await db.insert(vendorGroupMemberships)
       .values({ vendorId, groupId })
@@ -1109,13 +1184,13 @@ export class DatabaseStorage implements IStorage {
       ));
 
     if (!coupon) return null;
-    
+
     // Check expiration
     if (coupon.expiresAt && new Date() > coupon.expiresAt) return null;
-    
+
     // Check usage limit
     if (coupon.usageLimit && coupon.usageCount >= coupon.usageLimit) return null;
-    
+
     // Check minimum amount
     if (coupon.minimumAmount && orderAmount < parseFloat(coupon.minimumAmount)) return null;
 
@@ -1172,7 +1247,7 @@ export class DatabaseStorage implements IStorage {
   // Vendor verification methods
   async createVerificationDocument(data: any) {
     const [document] = await db.insert(vendorVerificationDocuments).values(data).returning();
-    
+
     // Log the submission
     await this.logVerificationAction({
       documentId: document.id,
@@ -1181,7 +1256,7 @@ export class DatabaseStorage implements IStorage {
       notes: 'Document submitted for verification',
       newStatus: 'pending'
     });
-    
+
     return document;
   }
 
@@ -1206,7 +1281,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateVerificationDocument(documentId: number, data: any) {
     const [oldDoc] = await db.select().from(vendorVerificationDocuments).where(eq(vendorVerificationDocuments.id, documentId));
-    
+
     const [updatedDoc] = await db.update(vendorVerificationDocuments)
       .set({ ...data, reviewedAt: new Date() })
       .where(eq(vendorVerificationDocuments.id, documentId))
@@ -1229,11 +1304,11 @@ export class DatabaseStorage implements IStorage {
 
   async getVerificationRequirements(groupId?: number) {
     let query = db.select().from(vendorVerificationRequirements);
-    
+
     if (groupId) {
       query = query.where(eq(vendorVerificationRequirements.groupId, groupId));
     }
-    
+
     return await query.orderBy(vendorVerificationRequirements.documentType);
   }
 
@@ -1508,7 +1583,7 @@ export class DatabaseStorage implements IStorage {
   async createSupportTicket(data: any) {
     // Generate ticket number
     const ticketNumber = `TKT-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
-    
+
     const [ticket] = await db.insert(storeSupportTickets)
       .values({ ...data, ticketNumber })
       .returning();
@@ -1594,7 +1669,7 @@ export class DatabaseStorage implements IStorage {
 
   async addSupportMessage(data: any) {
     const [message] = await db.insert(supportTicketMessages).values(data).returning();
-    
+
     // Update ticket's last response info
     await db.update(storeSupportTickets)
       .set({
@@ -1603,7 +1678,7 @@ export class DatabaseStorage implements IStorage {
         updatedAt: new Date()
       })
       .where(eq(storeSupportTickets.id, data.ticketId));
-    
+
     return message;
   }
 
@@ -1628,7 +1703,7 @@ export class DatabaseStorage implements IStorage {
     const [preferences] = await db.select()
       .from(vendorEmailPreferences)
       .where(eq(vendorEmailPreferences.vendorId, vendorId));
-    
+
     // Return default preferences if none exist
     if (!preferences) {
       return {
@@ -1645,7 +1720,7 @@ export class DatabaseStorage implements IStorage {
         accountSecurity: true,
       };
     }
-    
+
     return preferences;
   }
 

@@ -411,6 +411,118 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Multi-vendor order creation
+  app.post('/api/orders/multi-vendor', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const { vendorOrders, paymentType, installmentMonths, totalAmount, shippingAddress, paymentMethod } = req.body;
+
+      // Create parent order ID for tracking
+      const parentOrderId = crypto.randomUUID();
+      const subOrders = [];
+
+      // Process each vendor order separately
+      for (const vendorOrder of vendorOrders) {
+        const orderData = {
+          buyerId: userId,
+          vendorId: vendorOrder.vendorId,
+          productId: vendorOrder.items[0].product.id, // For now, use first product
+          quantity: vendorOrder.items.reduce((sum: number, item: any) => sum + item.quantity, 0),
+          totalAmount: vendorOrder.total.toString(),
+          paymentType,
+          installmentMonths,
+          shippingAddress,
+          notes: `Part of multi-vendor order ${parentOrderId}`,
+          parentOrderId, // Add this to track related orders
+        };
+
+        // Calculate installment fee if applicable
+        if (paymentType === 'installment' && installmentMonths) {
+          orderData.installmentFeeRate = "0.30"; // 30% fee
+          const baseAmount = vendorOrder.total;
+          const feeAmount = baseAmount * 0.30;
+          orderData.totalAmount = (baseAmount + feeAmount).toString();
+        }
+
+        const order = await storage.createOrder(orderData);
+
+        // Create escrow account for each sub-order
+        const escrowData = {
+          orderId: order.id,
+          buyerId: userId,
+          vendorId: vendorOrder.vendorId,
+          totalAmount: orderData.totalAmount,
+          heldAmount: orderData.totalAmount,
+          status: 'created',
+        };
+
+        const escrowAccount = await storage.createEscrowAccount(escrowData);
+
+        // Create default installation milestones for each order
+        const defaultMilestones = [
+          { name: 'Order Confirmed', percentage: 10, description: 'Order received and confirmed' },
+          { name: 'In Preparation', percentage: 30, description: 'Items being prepared for shipment' },
+          { name: 'Shipped', percentage: 60, description: 'Items shipped and in transit' },
+          { name: 'Out for Delivery', percentage: 80, description: 'Items out for delivery' },
+          { name: 'Delivered', percentage: 100, description: 'Items successfully delivered' },
+        ];
+
+        const totalAmount = parseFloat(orderData.totalAmount);
+        
+        for (const milestone of defaultMilestones) {
+          await storage.createInstallationMilestone({
+            orderId: order.id,
+            escrowAccountId: escrowAccount.id,
+            name: milestone.name,
+            description: milestone.description,
+            percentage: milestone.percentage.toString(),
+            amount: (totalAmount * milestone.percentage / 100).toString(),
+            dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+          });
+        }
+
+        subOrders.push({
+          orderId: order.id,
+          vendorId: vendorOrder.vendorId,
+          vendorName: vendorOrder.vendorName,
+          total: orderData.totalAmount,
+          escrowAccountId: escrowAccount.id
+        });
+      }
+
+      // Update inventory for all items
+      for (const vendorOrder of vendorOrders) {
+        for (const item of vendorOrder.items) {
+          // Implementation would go here to reduce stock quantity
+        }
+      }
+
+      // Clear cart after successful order creation
+      await storage.clearCart(userId);
+
+      res.status(201).json({ 
+        parentOrderId,
+        subOrders,
+        message: `Successfully created ${subOrders.length} orders from ${vendorOrders.length} vendors`
+      });
+    } catch (error) {
+      console.error("Error creating multi-vendor orders:", error);
+      res.status(500).json({ message: "Failed to create orders" });
+    }
+  });
+
+  // Get parent order summary
+  app.get('/api/orders/parent/:parentOrderId', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { parentOrderId } = req.params;
+      const summary = await storage.getParentOrderSummary(parentOrderId);
+      res.json(summary);
+    } catch (error) {
+      console.error("Error fetching parent order summary:", error);
+      res.status(500).json({ message: "Failed to fetch order summary" });
+    }
+  });
+
   app.post('/api/orders', authenticate, async (req: AuthenticatedRequest, res) => {
     try {
       const userId = req.user!.id;
