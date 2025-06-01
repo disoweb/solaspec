@@ -1,3 +1,4 @@
+import React from "react";
 import { Switch, Route } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
@@ -17,7 +18,6 @@ import Installers from "./pages/installers";
 import NotFound from "./pages/not-found";
 import "./index.css";
 import InstallerDashboard from "./pages/installer-dashboard";
-import { lazy } from 'react';
 
 function App() {
   return (
