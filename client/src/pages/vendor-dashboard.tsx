@@ -16,6 +16,9 @@ import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import VendorStats from "@/components/dashboard/vendor-stats";
 import ProductImportExport from "@/components/vendor/product-import-export";
+import RefundManagement from "@/components/vendor/refund-management";
+import StaffManagement from "@/components/vendor/staff-management";
+import PayoutManagement from "@/components/vendor/payout-management";
 import { 
   Package, 
   TrendingUp, 
@@ -38,7 +41,11 @@ import {
   CheckCircle,
   XCircle,
   RefreshCw,
-  Import
+  Import,
+  RotateCcw,
+  Award,
+  UserPlus,
+  Ticket
 } from "lucide-react";
 
 export default function VendorDashboard() {
@@ -111,6 +118,11 @@ export default function VendorDashboard() {
     { id: "inventory", label: "Inventory", icon: Package },
     { id: "orders", label: "Orders", icon: FileText },
     { id: "escrow", label: "Escrow & Payments", icon: Shield },
+    { id: "refunds", label: "Refunds", icon: RotateCcw },
+    { id: "payouts", label: "Payouts", icon: DollarSign },
+    { id: "coupons", label: "Coupons", icon: Ticket },
+    { id: "staff", label: "Team & Staff", icon: UserPlus },
+    { id: "badges", label: "Badges", icon: Award },
     { id: "analytics", label: "Analytics", icon: TrendingUp },
     { id: "settings", label: "Settings", icon: Settings },
   ];
@@ -130,14 +142,16 @@ export default function VendorDashboard() {
 
         {/* Navigation Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-8">
-            {tabs.map((tab) => (
-              <TabsTrigger key={tab.id} value={tab.id} className="flex items-center space-x-2">
-                <tab.icon className="w-4 h-4" />
-                <span className="hidden md:inline">{tab.label}</span>
-              </TabsTrigger>
-            ))}
-          </TabsList>
+          <div className="overflow-x-auto">
+            <TabsList className="grid w-full grid-cols-13 min-w-max">
+              {tabs.map((tab) => (
+                <TabsTrigger key={tab.id} value={tab.id} className="flex items-center space-x-2 whitespace-nowrap">
+                  <tab.icon className="w-4 h-4" />
+                  <span className="hidden md:inline">{tab.label}</span>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
 
           <TabsContent value="overview" className="space-y-8">
             <VendorStats />
@@ -257,6 +271,26 @@ export default function VendorDashboard() {
 
           <TabsContent value="escrow" className="space-y-6">
             <EscrowTab escrowAccounts={escrowAccounts} />
+          </TabsContent>
+
+          <TabsContent value="refunds" className="space-y-6">
+            <RefundManagement />
+          </TabsContent>
+
+          <TabsContent value="payouts" className="space-y-6">
+            <PayoutManagement />
+          </TabsContent>
+
+          <TabsContent value="coupons" className="space-y-6">
+            <CouponsTab vendor={vendor} />
+          </TabsContent>
+
+          <TabsContent value="staff" className="space-y-6">
+            <StaffManagement />
+          </TabsContent>
+
+          <TabsContent value="badges" className="space-y-6">
+            <BadgesTab vendor={vendor} />
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-6">
@@ -679,6 +713,182 @@ function AnalyticsTab({ vendor }: { vendor: any }) {
             Detailed analytics and reporting features coming soon.
           </p>
           <Button variant="outline">View Reports</Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Coupons Tab Component
+function CouponsTab({ vendor }: { vendor: any }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+
+  const { data: coupons } = useQuery({
+    queryKey: ["/api/vendor/coupons"],
+  });
+
+  const createCouponMutation = useMutation({
+    mutationFn: async (data: any) => {
+      await apiRequest("POST", "/api/vendor/coupons", data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Coupon Created",
+        description: "Your coupon has been created successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/vendor/coupons"] });
+      setShowCreateDialog(false);
+    },
+  });
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Coupon Management</h2>
+        <Button onClick={() => setShowCreateDialog(true)}>
+          <Plus className="w-4 h-4 mr-2" />
+          Create Coupon
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3">
+              <Ticket className="w-8 h-8 text-blue-600" />
+              <div>
+                <p className="text-sm text-gray-600">Active Coupons</p>
+                <p className="text-2xl font-bold">
+                  {coupons?.filter((c: any) => c.isActive).length || 0}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3">
+              <TrendingUp className="w-8 h-8 text-green-600" />
+              <div>
+                <p className="text-sm text-gray-600">Total Uses</p>
+                <p className="text-2xl font-bold">
+                  {coupons?.reduce((sum: number, c: any) => sum + (c.usageCount || 0), 0) || 0}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3">
+              <DollarSign className="w-8 h-8 text-purple-600" />
+              <div>
+                <p className="text-sm text-gray-600">Savings Provided</p>
+                <p className="text-2xl font-bold">$2,450</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Your Coupons</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {coupons && coupons.length > 0 ? (
+            <div className="space-y-4">
+              {coupons.map((coupon: any) => (
+                <div key={coupon.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <h4 className="font-semibold text-lg">{coupon.code}</h4>
+                    <p className="text-gray-600">{coupon.description}</p>
+                    <div className="flex items-center gap-4 mt-2 text-sm">
+                      <span>
+                        {coupon.discountType === 'percentage' ? `${coupon.discountValue}% off` : `$${coupon.discountValue} off`}
+                      </span>
+                      <span>Used: {coupon.usageCount}/{coupon.usageLimit || '∞'}</span>
+                      {coupon.expiresAt && (
+                        <span>Expires: {new Date(coupon.expiresAt).toLocaleDateString()}</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={coupon.isActive ? "default" : "secondary"}>
+                      {coupon.isActive ? "Active" : "Inactive"}
+                    </Badge>
+                    <Button size="sm" variant="outline">
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Ticket className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600 mb-4">No coupons created yet</p>
+              <Button onClick={() => setShowCreateDialog(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Create Your First Coupon
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Badges Tab Component
+function BadgesTab({ vendor }: { vendor: any }) {
+  const { data: badges } = useQuery({
+    queryKey: ["/api/vendor/badges"],
+  });
+
+  return (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold">Vendor Badges</h2>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Your Achievements</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {badges && badges.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {badges.map((badge: any) => (
+                <div key={badge.id} className="border rounded-lg p-4 text-center">
+                  <div className="w-12 h-12 mx-auto mb-3 flex items-center justify-center rounded-full" 
+                       style={{ backgroundColor: badge.badgeColor }}>
+                    <Award className="w-6 h-6 text-white" />
+                  </div>
+                  <h4 className="font-semibold">{badge.badgeName}</h4>
+                  <p className="text-sm text-gray-600 mt-1">{badge.badgeDescription}</p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Awarded: {new Date(badge.awardedAt).toLocaleDateString()}
+                  </p>
+                  {badge.expiresAt && (
+                    <p className="text-xs text-red-500">
+                      Expires: {new Date(badge.expiresAt).toLocaleDateString()}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Award className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600">No badges earned yet</p>
+              <p className="text-sm text-gray-500 mt-2">
+                Keep selling and providing great service to earn badges!
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

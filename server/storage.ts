@@ -28,7 +28,18 @@ import {
   inventoryAlerts,
   escrowAccounts,
   installationMilestones,
-  milestonePayments
+  milestonePayments,
+  refundRequests,
+  refundMessages,
+  vendorGroups,
+  vendorGroupMemberships,
+  groupTransferRules,
+  vendorStaff,
+  vendorPayouts,
+  vendorWithdrawals,
+  vendorCoupons,
+  vendorBadges,
+  vendorBadgeAssignments
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, asc, like, and, or, sql, inArray, count } from "drizzle-orm";
@@ -142,6 +153,55 @@ export interface IStorage {
   getPendingVendorApplications(): Promise<any[]>;
   approveVendorApplication(applicationId: string): Promise<void>;
   rejectVendorApplication(applicationId: string, reason: string): Promise<void>;
+
+  // Refund request methods
+  createRefundRequest(data: any): Promise<any>;
+  getRefundRequests(filters?: { vendorId?: number; status?: string }): Promise<any[]>;
+  updateRefundRequest(id: number, data: Partial<any>): Promise<any>;
+  addRefundMessage(data: any): Promise<any>;
+  getRefundMessages(refundRequestId: number): Promise<any[]>;
+
+  // Vendor groups methods
+  createVendorGroup(data: any): Promise<any>;
+  getVendorGroups(): Promise<any[]>;
+  updateVendorGroup(id: number, data: Partial<any>): Promise<any>;
+  assignVendorToGroup(vendorId: number, groupId: number): Promise<any>;
+  removeVendorFromGroup(vendorId: number, groupId: number): Promise<any>;
+
+  // Group transfer rules
+  createGroupTransferRule(data: any): Promise<any>;
+  getGroupTransferRules(): Promise<any[]>;
+  processGroupTransfers(): Promise<any>;
+
+  // Vendor staff methods
+  inviteVendorStaff(data: any): Promise<any>;
+  getVendorStaff(vendorId: number): Promise<any[]>;
+  updateVendorStaffPermissions(staffId: number, permissions: any): Promise<any>;
+  removeVendorStaff(staffId: number): Promise<any>;
+
+  // Payout methods
+  createVendorPayout(data: any): Promise<any>;
+  getVendorPayouts(vendorId: number): Promise<any[]>;
+  processVendorPayout(payoutId: number): Promise<any>;
+  getVendorBalance(vendorId: number): Promise<number>;
+
+  // Withdrawal methods
+  createVendorWithdrawal(data: any): Promise<any>;
+  getVendorWithdrawals(filters?: { vendorId?: number; status?: string }): Promise<any[]>;
+  updateWithdrawalStatus(withdrawalId: number, status: string, adminNotes?: string): Promise<any>;
+
+  // Coupon methods
+  createVendorCoupon(data: any): Promise<any>;
+  getVendorCoupons(vendorId: number): Promise<any[]>;
+  updateVendorCoupon(couponId: number, data: Partial<any>): Promise<any>;
+  validateCoupon(code: string, vendorId: number, orderAmount: number): Promise<any>;
+
+  // Badge methods
+  createVendorBadge(data: any): Promise<any>;
+  getVendorBadges(): Promise<any[]>;
+  assignBadgeToVendor(vendorId: number, badgeId: number, awardedBy?: number): Promise<any>;
+  getVendorBadgeAssignments(vendorId: number): Promise<any[]>;
+  processBadgeAssignments(): Promise<any>;
 
   // Product operations by vendor
   // Product operations
@@ -731,6 +791,325 @@ export class DatabaseStorage implements IStorage {
   async rejectVendorApplication(applicationId: string, reason: string): Promise<void> {
     // This would reject the vendor application
     console.log(`Rejecting vendor application ${applicationId}: ${reason}`);
+  }
+
+  // Refund request methods
+  async createRefundRequest(data: any) {
+    const [refundRequest] = await db.insert(refundRequests).values(data).returning();
+    return refundRequest;
+  }
+
+  async getRefundRequests(filters?: { vendorId?: number; status?: string }) {
+    let query = db.select({
+      id: refundRequests.id,
+      orderId: refundRequests.orderId,
+      amount: refundRequests.amount,
+      reason: refundRequests.reason,
+      status: refundRequests.status,
+      adminResponse: refundRequests.adminResponse,
+      vendorResponse: refundRequests.vendorResponse,
+      createdAt: refundRequests.createdAt,
+      requesterName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
+      vendorName: vendors.companyName,
+    })
+    .from(refundRequests)
+    .leftJoin(users, eq(refundRequests.requesterId, users.id))
+    .leftJoin(vendors, eq(refundRequests.vendorId, vendors.id));
+
+    const conditions = [];
+    if (filters?.vendorId) {
+      conditions.push(eq(refundRequests.vendorId, filters.vendorId));
+    }
+    if (filters?.status) {
+      conditions.push(eq(refundRequests.status, filters.status as any));
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+
+    return await query.orderBy(desc(refundRequests.createdAt));
+  }
+
+  async updateRefundRequest(id: number, data: Partial<any>) {
+    const [updatedRequest] = await db.update(refundRequests)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(refundRequests.id, id))
+      .returning();
+    return updatedRequest;
+  }
+
+  async addRefundMessage(data: any) {
+    const [message] = await db.insert(refundMessages).values(data).returning();
+    return message;
+  }
+
+  async getRefundMessages(refundRequestId: number) {
+    return await db.select({
+      id: refundMessages.id,
+      message: refundMessages.message,
+      attachments: refundMessages.attachments,
+      createdAt: refundMessages.createdAt,
+      senderName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
+      senderRole: users.role,
+    })
+    .from(refundMessages)
+    .leftJoin(users, eq(refundMessages.senderId, users.id))
+    .where(eq(refundMessages.refundRequestId, refundRequestId))
+    .orderBy(refundMessages.createdAt);
+  }
+
+  // Vendor groups methods
+  async createVendorGroup(data: any) {
+    const [group] = await db.insert(vendorGroups).values(data).returning();
+    return group;
+  }
+
+  async getVendorGroups() {
+    return await db.select().from(vendorGroups).orderBy(vendorGroups.name);
+  }
+
+  async updateVendorGroup(id: number, data: Partial<any>) {
+    const [group] = await db.update(vendorGroups)
+      .set(data)
+      .where(eq(vendorGroups.id, id))
+      .returning();
+    return group;
+  }
+
+  async assignVendorToGroup(vendorId: number, groupId: number) {
+    // Remove existing memberships first
+    await db.delete(vendorGroupMemberships).where(eq(vendorGroupMemberships.vendorId, vendorId));
+    
+    // Add new membership
+    const [membership] = await db.insert(vendorGroupMemberships)
+      .values({ vendorId, groupId })
+      .returning();
+    return membership;
+  }
+
+  async removeVendorFromGroup(vendorId: number, groupId: number) {
+    await db.delete(vendorGroupMemberships)
+      .where(and(
+        eq(vendorGroupMemberships.vendorId, vendorId),
+        eq(vendorGroupMemberships.groupId, groupId)
+      ));
+  }
+
+  // Group transfer rules
+  async createGroupTransferRule(data: any) {
+    const [rule] = await db.insert(groupTransferRules).values(data).returning();
+    return rule;
+  }
+
+  async getGroupTransferRules() {
+    return await db.select().from(groupTransferRules).where(eq(groupTransferRules.isActive, true));
+  }
+
+  async processGroupTransfers() {
+    // Implementation for processing automatic group transfers based on rules
+    const rules = await this.getGroupTransferRules();
+    const processedTransfers = [];
+
+    for (const rule of rules) {
+      // This would contain logic to check vendors against the rule conditions
+      // and move them to appropriate groups
+    }
+
+    return processedTransfers;
+  }
+
+  // Vendor staff methods
+  async inviteVendorStaff(data: any) {
+    const [staff] = await db.insert(vendorStaff).values(data).returning();
+    return staff;
+  }
+
+  async getVendorStaff(vendorId: number) {
+    return await db.select({
+      id: vendorStaff.id,
+      role: vendorStaff.role,
+      permissions: vendorStaff.permissions,
+      isActive: vendorStaff.isActive,
+      invitedAt: vendorStaff.invitedAt,
+      joinedAt: vendorStaff.joinedAt,
+      userName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
+      userEmail: users.email,
+    })
+    .from(vendorStaff)
+    .leftJoin(users, eq(vendorStaff.userId, users.id))
+    .where(eq(vendorStaff.vendorId, vendorId));
+  }
+
+  async updateVendorStaffPermissions(staffId: number, permissions: any) {
+    const [staff] = await db.update(vendorStaff)
+      .set({ permissions })
+      .where(eq(vendorStaff.id, staffId))
+      .returning();
+    return staff;
+  }
+
+  async removeVendorStaff(staffId: number) {
+    await db.delete(vendorStaff).where(eq(vendorStaff.id, staffId));
+  }
+
+  // Payout methods
+  async createVendorPayout(data: any) {
+    const [payout] = await db.insert(vendorPayouts).values(data).returning();
+    return payout;
+  }
+
+  async getVendorPayouts(vendorId: number) {
+    return await db.select()
+      .from(vendorPayouts)
+      .where(eq(vendorPayouts.vendorId, vendorId))
+      .orderBy(desc(vendorPayouts.createdAt));
+  }
+
+  async processVendorPayout(payoutId: number) {
+    const [payout] = await db.update(vendorPayouts)
+      .set({ status: 'completed', processedAt: new Date() })
+      .where(eq(vendorPayouts.id, payoutId))
+      .returning();
+    return payout;
+  }
+
+  async getVendorBalance(vendorId: number) {
+    const [result] = await db
+      .select({
+        balance: sql<number>`COALESCE(SUM(CASE WHEN type IN ('commission', 'bonus') THEN amount ELSE -amount END), 0)`
+      })
+      .from(vendorPayouts)
+      .where(eq(vendorPayouts.vendorId, vendorId));
+
+    return result?.balance || 0;
+  }
+
+  // Withdrawal methods
+  async createVendorWithdrawal(data: any) {
+    const [withdrawal] = await db.insert(vendorWithdrawals).values(data).returning();
+    return withdrawal;
+  }
+
+  async getVendorWithdrawals(filters?: { vendorId?: number; status?: string }) {
+    let query = db.select().from(vendorWithdrawals);
+
+    const conditions = [];
+    if (filters?.vendorId) {
+      conditions.push(eq(vendorWithdrawals.vendorId, filters.vendorId));
+    }
+    if (filters?.status) {
+      conditions.push(eq(vendorWithdrawals.status, filters.status as any));
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+
+    return await query.orderBy(desc(vendorWithdrawals.createdAt));
+  }
+
+  async updateWithdrawalStatus(withdrawalId: number, status: string, adminNotes?: string) {
+    const [withdrawal] = await db.update(vendorWithdrawals)
+      .set({ 
+        status: status as any, 
+        adminNotes, 
+        processedAt: status === 'processed' ? new Date() : undefined 
+      })
+      .where(eq(vendorWithdrawals.id, withdrawalId))
+      .returning();
+    return withdrawal;
+  }
+
+  // Coupon methods
+  async createVendorCoupon(data: any) {
+    const [coupon] = await db.insert(vendorCoupons).values(data).returning();
+    return coupon;
+  }
+
+  async getVendorCoupons(vendorId: number) {
+    return await db.select()
+      .from(vendorCoupons)
+      .where(eq(vendorCoupons.vendorId, vendorId))
+      .orderBy(desc(vendorCoupons.createdAt));
+  }
+
+  async updateVendorCoupon(couponId: number, data: Partial<any>) {
+    const [coupon] = await db.update(vendorCoupons)
+      .set(data)
+      .where(eq(vendorCoupons.id, couponId))
+      .returning();
+    return coupon;
+  }
+
+  async validateCoupon(code: string, vendorId: number, orderAmount: number) {
+    const [coupon] = await db.select()
+      .from(vendorCoupons)
+      .where(and(
+        eq(vendorCoupons.code, code),
+        eq(vendorCoupons.vendorId, vendorId),
+        eq(vendorCoupons.isActive, true)
+      ));
+
+    if (!coupon) return null;
+    
+    // Check expiration
+    if (coupon.expiresAt && new Date() > coupon.expiresAt) return null;
+    
+    // Check usage limit
+    if (coupon.usageLimit && coupon.usageCount >= coupon.usageLimit) return null;
+    
+    // Check minimum amount
+    if (coupon.minimumAmount && orderAmount < parseFloat(coupon.minimumAmount)) return null;
+
+    return coupon;
+  }
+
+  // Badge methods
+  async createVendorBadge(data: any) {
+    const [badge] = await db.insert(vendorBadges).values(data).returning();
+    return badge;
+  }
+
+  async getVendorBadges() {
+    return await db.select().from(vendorBadges).where(eq(vendorBadges.isActive, true));
+  }
+
+  async assignBadgeToVendor(vendorId: number, badgeId: number, awardedBy?: number) {
+    const [assignment] = await db.insert(vendorBadgeAssignments)
+      .values({ vendorId, badgeId, awardedBy })
+      .returning();
+    return assignment;
+  }
+
+  async getVendorBadgeAssignments(vendorId: number) {
+    return await db.select({
+      id: vendorBadgeAssignments.id,
+      badgeId: vendorBadgeAssignments.badgeId,
+      awardedAt: vendorBadgeAssignments.awardedAt,
+      expiresAt: vendorBadgeAssignments.expiresAt,
+      badgeName: vendorBadges.name,
+      badgeDescription: vendorBadges.description,
+      badgeIcon: vendorBadges.icon,
+      badgeColor: vendorBadges.color,
+    })
+    .from(vendorBadgeAssignments)
+    .leftJoin(vendorBadges, eq(vendorBadgeAssignments.badgeId, vendorBadges.id))
+    .where(eq(vendorBadgeAssignments.vendorId, vendorId));
+  }
+
+  async processBadgeAssignments() {
+    // Implementation for processing automatic badge assignments
+    const badges = await this.getVendorBadges();
+    const processedAssignments = [];
+
+    for (const badge of badges) {
+      if (badge.conditionType !== 'manual') {
+        // Process automatic badge assignments based on conditions
+      }
+    }
+
+    return processedAssignments;
   }
 
   // Product operations by vendor

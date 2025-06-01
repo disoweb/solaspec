@@ -842,6 +842,348 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Refund request routes
+  app.post('/api/refunds', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const refundData = {
+        ...req.body,
+        requesterId: userId,
+      };
+
+      const refund = await storage.createRefundRequest(refundData);
+      res.status(201).json(refund);
+    } catch (error) {
+      console.error("Error creating refund request:", error);
+      res.status(500).json({ message: "Failed to create refund request" });
+    }
+  });
+
+  app.get('/api/refunds', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const user = await storage.getUser(userId);
+      const { status } = req.query;
+
+      let filters: any = {};
+      if (status) filters.status = status as string;
+
+      if (user?.role === 'vendor') {
+        const vendor = await storage.getVendorByUserId(userId);
+        if (vendor) {
+          filters.vendorId = vendor.id;
+        }
+      }
+
+      const refunds = await storage.getRefundRequests(filters);
+      res.json(refunds);
+    } catch (error) {
+      console.error("Error fetching refunds:", error);
+      res.status(500).json({ message: "Failed to fetch refunds" });
+    }
+  });
+
+  app.put('/api/refunds/:id', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const refundId = parseInt(req.params.id);
+      const updatedRefund = await storage.updateRefundRequest(refundId, req.body);
+      res.json(updatedRefund);
+    } catch (error) {
+      console.error("Error updating refund:", error);
+      res.status(500).json({ message: "Failed to update refund" });
+    }
+  });
+
+  app.post('/api/refunds/:id/messages', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const refundRequestId = parseInt(req.params.id);
+      const userId = req.user!.id;
+      
+      const messageData = {
+        refundRequestId,
+        senderId: userId,
+        message: req.body.message,
+        attachments: req.body.attachments,
+      };
+
+      const message = await storage.addRefundMessage(messageData);
+      res.status(201).json(message);
+    } catch (error) {
+      console.error("Error adding refund message:", error);
+      res.status(500).json({ message: "Failed to add message" });
+    }
+  });
+
+  app.get('/api/refunds/:id/messages', authenticate, async (req, res) => {
+    try {
+      const refundRequestId = parseInt(req.params.id);
+      const messages = await storage.getRefundMessages(refundRequestId);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching refund messages:", error);
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  // Vendor groups routes
+  app.post('/api/vendor-groups', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const user = await storage.getUser(userId);
+
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const group = await storage.createVendorGroup(req.body);
+      res.status(201).json(group);
+    } catch (error) {
+      console.error("Error creating vendor group:", error);
+      res.status(500).json({ message: "Failed to create vendor group" });
+    }
+  });
+
+  app.get('/api/vendor-groups', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const groups = await storage.getVendorGroups();
+      res.json(groups);
+    } catch (error) {
+      console.error("Error fetching vendor groups:", error);
+      res.status(500).json({ message: "Failed to fetch vendor groups" });
+    }
+  });
+
+  app.post('/api/vendors/:vendorId/group', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const user = await storage.getUser(userId);
+
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const vendorId = parseInt(req.params.vendorId);
+      const { groupId } = req.body;
+
+      const membership = await storage.assignVendorToGroup(vendorId, groupId);
+      res.json(membership);
+    } catch (error) {
+      console.error("Error assigning vendor to group:", error);
+      res.status(500).json({ message: "Failed to assign vendor to group" });
+    }
+  });
+
+  // Vendor staff routes
+  app.post('/api/vendor/staff', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const vendor = await storage.getVendorByUserId(userId);
+      
+      if (!vendor) {
+        return res.status(404).json({ message: "Vendor profile not found" });
+      }
+
+      const staffData = {
+        ...req.body,
+        vendorId: vendor.id,
+      };
+
+      const staff = await storage.inviteVendorStaff(staffData);
+      res.status(201).json(staff);
+    } catch (error) {
+      console.error("Error inviting vendor staff:", error);
+      res.status(500).json({ message: "Failed to invite staff" });
+    }
+  });
+
+  app.get('/api/vendor/staff', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const vendor = await storage.getVendorByUserId(userId);
+      
+      if (!vendor) {
+        return res.status(404).json({ message: "Vendor profile not found" });
+      }
+
+      const staff = await storage.getVendorStaff(vendor.id);
+      res.json(staff);
+    } catch (error) {
+      console.error("Error fetching vendor staff:", error);
+      res.status(500).json({ message: "Failed to fetch staff" });
+    }
+  });
+
+  // Vendor payouts routes
+  app.get('/api/vendor/payouts', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const vendor = await storage.getVendorByUserId(userId);
+      
+      if (!vendor) {
+        return res.status(404).json({ message: "Vendor profile not found" });
+      }
+
+      const payouts = await storage.getVendorPayouts(vendor.id);
+      res.json(payouts);
+    } catch (error) {
+      console.error("Error fetching vendor payouts:", error);
+      res.status(500).json({ message: "Failed to fetch payouts" });
+    }
+  });
+
+  app.get('/api/vendor/balance', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const vendor = await storage.getVendorByUserId(userId);
+      
+      if (!vendor) {
+        return res.status(404).json({ message: "Vendor profile not found" });
+      }
+
+      const balance = await storage.getVendorBalance(vendor.id);
+      res.json({ balance });
+    } catch (error) {
+      console.error("Error fetching vendor balance:", error);
+      res.status(500).json({ message: "Failed to fetch balance" });
+    }
+  });
+
+  // Vendor withdrawal routes
+  app.post('/api/vendor/withdrawals', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const vendor = await storage.getVendorByUserId(userId);
+      
+      if (!vendor) {
+        return res.status(404).json({ message: "Vendor profile not found" });
+      }
+
+      const withdrawalData = {
+        ...req.body,
+        vendorId: vendor.id,
+      };
+
+      const withdrawal = await storage.createVendorWithdrawal(withdrawalData);
+      res.status(201).json(withdrawal);
+    } catch (error) {
+      console.error("Error creating withdrawal request:", error);
+      res.status(500).json({ message: "Failed to create withdrawal request" });
+    }
+  });
+
+  app.get('/api/vendor/withdrawals', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const vendor = await storage.getVendorByUserId(userId);
+      
+      if (!vendor) {
+        return res.status(404).json({ message: "Vendor profile not found" });
+      }
+
+      const withdrawals = await storage.getVendorWithdrawals({ vendorId: vendor.id });
+      res.json(withdrawals);
+    } catch (error) {
+      console.error("Error fetching withdrawals:", error);
+      res.status(500).json({ message: "Failed to fetch withdrawals" });
+    }
+  });
+
+  // Vendor coupons routes
+  app.post('/api/vendor/coupons', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const vendor = await storage.getVendorByUserId(userId);
+      
+      if (!vendor) {
+        return res.status(404).json({ message: "Vendor profile not found" });
+      }
+
+      const couponData = {
+        ...req.body,
+        vendorId: vendor.id,
+      };
+
+      const coupon = await storage.createVendorCoupon(couponData);
+      res.status(201).json(coupon);
+    } catch (error) {
+      console.error("Error creating coupon:", error);
+      res.status(500).json({ message: "Failed to create coupon" });
+    }
+  });
+
+  app.get('/api/vendor/coupons', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const vendor = await storage.getVendorByUserId(userId);
+      
+      if (!vendor) {
+        return res.status(404).json({ message: "Vendor profile not found" });
+      }
+
+      const coupons = await storage.getVendorCoupons(vendor.id);
+      res.json(coupons);
+    } catch (error) {
+      console.error("Error fetching coupons:", error);
+      res.status(500).json({ message: "Failed to fetch coupons" });
+    }
+  });
+
+  // Vendor badges routes
+  app.get('/api/vendor/badges', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const vendor = await storage.getVendorByUserId(userId);
+      
+      if (!vendor) {
+        return res.status(404).json({ message: "Vendor profile not found" });
+      }
+
+      const badges = await storage.getVendorBadgeAssignments(vendor.id);
+      res.json(badges);
+    } catch (error) {
+      console.error("Error fetching vendor badges:", error);
+      res.status(500).json({ message: "Failed to fetch badges" });
+    }
+  });
+
+  // Admin badge management
+  app.post('/api/admin/badges', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const user = await storage.getUser(userId);
+
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const badge = await storage.createVendorBadge(req.body);
+      res.status(201).json(badge);
+    } catch (error) {
+      console.error("Error creating badge:", error);
+      res.status(500).json({ message: "Failed to create badge" });
+    }
+  });
+
+  app.post('/api/admin/badges/:badgeId/assign/:vendorId', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const user = await storage.getUser(userId);
+
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const badgeId = parseInt(req.params.badgeId);
+      const vendorId = parseInt(req.params.vendorId);
+
+      const assignment = await storage.assignBadgeToVendor(vendorId, badgeId, userId);
+      res.json(assignment);
+    } catch (error) {
+      console.error("Error assigning badge:", error);
+      res.status(500).json({ message: "Failed to assign badge" });
+    }
+  });
+
   // Vendor registration and approval routes
   app.post('/api/vendors/register', async (req, res) => {
     try {

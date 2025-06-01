@@ -239,6 +239,152 @@ export const inventoryAlerts = pgTable("inventory_alerts", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Refund requests
+export const refundRequests = pgTable("refund_requests", {
+  id: serial("id").primaryKey(),
+  orderId: uuid("order_id").notNull().references(() => orders.id),
+  requesterId: integer("requester_id").notNull().references(() => users.id),
+  vendorId: integer("vendor_id").notNull().references(() => vendors.id),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  reason: text("reason").notNull(),
+  status: varchar("status", { enum: ["pending", "approved", "rejected", "processed"] }).default("pending").notNull(),
+  adminResponse: text("admin_response"),
+  vendorResponse: text("vendor_response"),
+  processedAt: timestamp("processed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Refund messages for communication
+export const refundMessages = pgTable("refund_messages", {
+  id: serial("id").primaryKey(),
+  refundRequestId: integer("refund_request_id").notNull().references(() => refundRequests.id),
+  senderId: integer("sender_id").notNull().references(() => users.id),
+  message: text("message").notNull(),
+  attachments: jsonb("attachments"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Vendor groups for organizing vendors
+export const vendorGroups = pgTable("vendor_groups", {
+  id: serial("id").primaryKey(),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  color: varchar("color").default("#3B82F6"),
+  commissionRate: decimal("commission_rate", { precision: 5, scale: 2 }),
+  maxProducts: integer("max_products"),
+  allowedCategories: text("allowed_categories").array(),
+  permissions: jsonb("permissions"),
+  badges: text("badges").array(),
+  isDefault: boolean("is_default").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Vendor group memberships
+export const vendorGroupMemberships = pgTable("vendor_group_memberships", {
+  id: serial("id").primaryKey(),
+  vendorId: integer("vendor_id").notNull().references(() => vendors.id),
+  groupId: integer("group_id").notNull().references(() => vendorGroups.id),
+  joinedAt: timestamp("joined_at").defaultNow(),
+});
+
+// Group transfer rules for automatic group changes
+export const groupTransferRules = pgTable("group_transfer_rules", {
+  id: serial("id").primaryKey(),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  fromGroupId: integer("from_group_id").references(() => vendorGroups.id),
+  toGroupId: integer("to_group_id").notNull().references(() => vendorGroups.id),
+  conditionType: varchar("condition_type", { 
+    enum: ["total_sales", "order_count", "registration_days", "product_count", "rating"] 
+  }).notNull(),
+  conditionValue: decimal("condition_value", { precision: 15, scale: 2 }).notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Vendor staff/team members
+export const vendorStaff = pgTable("vendor_staff", {
+  id: serial("id").primaryKey(),
+  vendorId: integer("vendor_id").notNull().references(() => vendors.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  role: varchar("role").notNull(),
+  permissions: jsonb("permissions"),
+  isActive: boolean("is_active").default(true),
+  invitedAt: timestamp("invited_at").defaultNow(),
+  joinedAt: timestamp("joined_at"),
+});
+
+// Vendor payouts and balance tracking
+export const vendorPayouts = pgTable("vendor_payouts", {
+  id: serial("id").primaryKey(),
+  vendorId: integer("vendor_id").notNull().references(() => vendors.id),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  type: varchar("type", { enum: ["commission", "bonus", "withdrawal", "refund"] }).notNull(),
+  status: varchar("status", { enum: ["pending", "processing", "completed", "failed"] }).default("pending").notNull(),
+  paymentMethod: varchar("payment_method"),
+  transactionId: varchar("transaction_id"),
+  notes: text("notes"),
+  processedAt: timestamp("processed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Vendor withdrawal requests
+export const vendorWithdrawals = pgTable("vendor_withdrawals", {
+  id: serial("id").primaryKey(),
+  vendorId: integer("vendor_id").notNull().references(() => vendors.id),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  paymentMethod: varchar("payment_method").notNull(),
+  paymentDetails: jsonb("payment_details"),
+  status: varchar("status", { enum: ["pending", "approved", "rejected", "processed"] }).default("pending").notNull(),
+  adminNotes: text("admin_notes"),
+  processedAt: timestamp("processed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Vendor coupons
+export const vendorCoupons = pgTable("vendor_coupons", {
+  id: serial("id").primaryKey(),
+  vendorId: integer("vendor_id").notNull().references(() => vendors.id),
+  code: varchar("code").notNull(),
+  description: text("description"),
+  discountType: varchar("discount_type", { enum: ["percentage", "fixed"] }).notNull(),
+  discountValue: decimal("discount_value", { precision: 10, scale: 2 }).notNull(),
+  minimumAmount: decimal("minimum_amount", { precision: 10, scale: 2 }),
+  maximumAmount: decimal("maximum_amount", { precision: 10, scale: 2 }),
+  usageLimit: integer("usage_limit"),
+  usageCount: integer("usage_count").default(0),
+  applicableProducts: text("applicable_products").array(),
+  isActive: boolean("is_active").default(true),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Vendor badges system
+export const vendorBadges = pgTable("vendor_badges", {
+  id: serial("id").primaryKey(),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  icon: varchar("icon"),
+  color: varchar("color").default("#3B82F6"),
+  conditionType: varchar("condition_type", { 
+    enum: ["manual", "total_sales", "order_count", "rating", "years_active", "group_membership"] 
+  }).notNull(),
+  conditionValue: decimal("condition_value", { precision: 15, scale: 2 }),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Vendor badge assignments
+export const vendorBadgeAssignments = pgTable("vendor_badge_assignments", {
+  id: serial("id").primaryKey(),
+  vendorId: integer("vendor_id").notNull().references(() => vendors.id),
+  badgeId: integer("badge_id").notNull().references(() => vendorBadges.id),
+  awardedAt: timestamp("awarded_at").defaultNow(),
+  awardedBy: integer("awarded_by").references(() => users.id),
+  expiresAt: timestamp("expires_at"),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many, one }) => ({
   vendor: one(vendors, {
@@ -423,6 +569,101 @@ export const inventoryAlertsRelations = relations(inventoryAlerts, ({ one }) => 
   }),
 }));
 
+export const refundRequestsRelations = relations(refundRequests, ({ one, many }) => ({
+  order: one(orders, {
+    fields: [refundRequests.orderId],
+    references: [orders.id],
+  }),
+  requester: one(users, {
+    fields: [refundRequests.requesterId],
+    references: [users.id],
+  }),
+  vendor: one(vendors, {
+    fields: [refundRequests.vendorId],
+    references: [vendors.id],
+  }),
+  messages: many(refundMessages),
+}));
+
+export const refundMessagesRelations = relations(refundMessages, ({ one }) => ({
+  refundRequest: one(refundRequests, {
+    fields: [refundMessages.refundRequestId],
+    references: [refundRequests.id],
+  }),
+  sender: one(users, {
+    fields: [refundMessages.senderId],
+    references: [users.id],
+  }),
+}));
+
+export const vendorGroupsRelations = relations(vendorGroups, ({ many }) => ({
+  memberships: many(vendorGroupMemberships),
+  transferRulesFrom: many(groupTransferRules),
+  transferRulesTo: many(groupTransferRules),
+}));
+
+export const vendorGroupMembershipsRelations = relations(vendorGroupMemberships, ({ one }) => ({
+  vendor: one(vendors, {
+    fields: [vendorGroupMemberships.vendorId],
+    references: [vendors.id],
+  }),
+  group: one(vendorGroups, {
+    fields: [vendorGroupMemberships.groupId],
+    references: [vendorGroups.id],
+  }),
+}));
+
+export const vendorStaffRelations = relations(vendorStaff, ({ one }) => ({
+  vendor: one(vendors, {
+    fields: [vendorStaff.vendorId],
+    references: [vendors.id],
+  }),
+  user: one(users, {
+    fields: [vendorStaff.userId],
+    references: [users.id],
+  }),
+}));
+
+export const vendorPayoutsRelations = relations(vendorPayouts, ({ one }) => ({
+  vendor: one(vendors, {
+    fields: [vendorPayouts.vendorId],
+    references: [vendors.id],
+  }),
+}));
+
+export const vendorWithdrawalsRelations = relations(vendorWithdrawals, ({ one }) => ({
+  vendor: one(vendors, {
+    fields: [vendorWithdrawals.vendorId],
+    references: [vendors.id],
+  }),
+}));
+
+export const vendorCouponsRelations = relations(vendorCoupons, ({ one }) => ({
+  vendor: one(vendors, {
+    fields: [vendorCoupons.vendorId],
+    references: [vendors.id],
+  }),
+}));
+
+export const vendorBadgesRelations = relations(vendorBadges, ({ many }) => ({
+  assignments: many(vendorBadgeAssignments),
+}));
+
+export const vendorBadgeAssignmentsRelations = relations(vendorBadgeAssignments, ({ one }) => ({
+  vendor: one(vendors, {
+    fields: [vendorBadgeAssignments.vendorId],
+    references: [vendors.id],
+  }),
+  badge: one(vendorBadges, {
+    fields: [vendorBadgeAssignments.badgeId],
+    references: [vendorBadges.id],
+  }),
+  awardedByUser: one(users, {
+    fields: [vendorBadgeAssignments.awardedBy],
+    references: [users.id],
+  }),
+}));
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertVendorSchema = createInsertSchema(vendors).omit({ id: true, createdAt: true });
@@ -438,6 +679,17 @@ export const insertEscrowAccountSchema = createInsertSchema(escrowAccounts).omit
 export const insertInstallationMilestoneSchema = createInsertSchema(installationMilestones).omit({ id: true, createdAt: true });
 export const insertMilestonePaymentSchema = createInsertSchema(milestonePayments).omit({ id: true, createdAt: true });
 export const insertInventoryAlertSchema = createInsertSchema(inventoryAlerts).omit({ id: true, createdAt: true });
+export const insertRefundRequestSchema = createInsertSchema(refundRequests).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertRefundMessageSchema = createInsertSchema(refundMessages).omit({ id: true, createdAt: true });
+export const insertVendorGroupSchema = createInsertSchema(vendorGroups).omit({ id: true, createdAt: true });
+export const insertVendorGroupMembershipSchema = createInsertSchema(vendorGroupMemberships).omit({ id: true, joinedAt: true });
+export const insertGroupTransferRuleSchema = createInsertSchema(groupTransferRules).omit({ id: true, createdAt: true });
+export const insertVendorStaffSchema = createInsertSchema(vendorStaff).omit({ id: true, invitedAt: true });
+export const insertVendorPayoutSchema = createInsertSchema(vendorPayouts).omit({ id: true, createdAt: true });
+export const insertVendorWithdrawalSchema = createInsertSchema(vendorWithdrawals).omit({ id: true, createdAt: true });
+export const insertVendorCouponSchema = createInsertSchema(vendorCoupons).omit({ id: true, createdAt: true });
+export const insertVendorBadgeSchema = createInsertSchema(vendorBadges).omit({ id: true, createdAt: true });
+export const insertVendorBadgeAssignmentSchema = createInsertSchema(vendorBadgeAssignments).omit({ id: true, awardedAt: true });
 
 // Types
 export type User = typeof users.$inferSelect;
@@ -482,3 +734,36 @@ export type InsertMilestonePayment = z.infer<typeof insertMilestonePaymentSchema
 
 export type InventoryAlert = typeof inventoryAlerts.$inferSelect;
 export type InsertInventoryAlert = z.infer<typeof insertInventoryAlertSchema>;
+
+export type RefundRequest = typeof refundRequests.$inferSelect;
+export type InsertRefundRequest = z.infer<typeof insertRefundRequestSchema>;
+
+export type RefundMessage = typeof refundMessages.$inferSelect;
+export type InsertRefundMessage = z.infer<typeof insertRefundMessageSchema>;
+
+export type VendorGroup = typeof vendorGroups.$inferSelect;
+export type InsertVendorGroup = z.infer<typeof insertVendorGroupSchema>;
+
+export type VendorGroupMembership = typeof vendorGroupMemberships.$inferSelect;
+export type InsertVendorGroupMembership = z.infer<typeof insertVendorGroupMembershipSchema>;
+
+export type GroupTransferRule = typeof groupTransferRules.$inferSelect;
+export type InsertGroupTransferRule = z.infer<typeof insertGroupTransferRuleSchema>;
+
+export type VendorStaff = typeof vendorStaff.$inferSelect;
+export type InsertVendorStaff = z.infer<typeof insertVendorStaffSchema>;
+
+export type VendorPayout = typeof vendorPayouts.$inferSelect;
+export type InsertVendorPayout = z.infer<typeof insertVendorPayoutSchema>;
+
+export type VendorWithdrawal = typeof vendorWithdrawals.$inferSelect;
+export type InsertVendorWithdrawal = z.infer<typeof insertVendorWithdrawalSchema>;
+
+export type VendorCoupon = typeof vendorCoupons.$inferSelect;
+export type InsertVendorCoupon = z.infer<typeof insertVendorCouponSchema>;
+
+export type VendorBadge = typeof vendorBadges.$inferSelect;
+export type InsertVendorBadge = z.infer<typeof insertVendorBadgeSchema>;
+
+export type VendorBadgeAssignment = typeof vendorBadgeAssignments.$inferSelect;
+export type InsertVendorBadgeAssignment = z.infer<typeof insertVendorBadgeAssignmentSchema>;
