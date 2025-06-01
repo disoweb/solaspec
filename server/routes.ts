@@ -56,6 +56,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         role,
       }).returning();
 
+      // Auto-create installer profile if role is installer
+      if (role === 'installer') {
+        await storage.createInstaller({
+          userId: newUser.id,
+          companyName: `${firstName} ${lastName} Solar Services`,
+          experience: 0,
+          totalInstallations: 0,
+          serviceAreas: ["Local Area"],
+          certifications: [],
+          availability: new Date().toISOString(),
+          verified: false,
+        });
+      }
+
+      // Auto-create vendor profile if role is vendor
+      if (role === 'vendor') {
+        await storage.createVendor({
+          userId: newUser.id,
+          companyName: `${firstName} ${lastName} Solar Company`,
+          description: "Solar equipment vendor",
+          address: "",
+          phone: "",
+          website: "",
+          verified: false,
+        });
+      }
+
       // Generate JWT token
       const token = jwt.sign({ userId: newUser.id, email: newUser.email, role: newUser.role }, JWT_SECRET, { expiresIn: "7d" });
 
@@ -252,6 +279,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching vendor profile:", error);
       res.status(500).json({ message: "Failed to fetch vendor profile" });
+    }
+  });
+
+  app.get('/api/installers/profile', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const installer = await storage.getInstallerByUserId(userId);
+      if (!installer) {
+        return res.status(404).json({ message: "Installer profile not found" });
+      }
+      res.json(installer);
+    } catch (error) {
+      console.error("Error fetching installer profile:", error);
+      res.status(500).json({ message: "Failed to fetch installer profile" });
     }
   });
 

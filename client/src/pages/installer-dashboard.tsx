@@ -42,17 +42,17 @@ export default function InstallerDashboard() {
 
   const { data: installer } = useQuery({
     queryKey: ["/api/installers/profile"],
-    enabled: !!user,
+    enabled: !!user && user.role === 'installer',
   });
 
   const { data: orders } = useQuery({
     queryKey: ["/api/orders"],
-    enabled: !!installer?.id,
+    enabled: !!user && user.role === 'installer',
   });
 
   const { data: milestones } = useQuery({
     queryKey: ["/api/milestones"],
-    enabled: !!installer?.id,
+    enabled: !!user && user.role === 'installer',
   });
 
   const updateMilestoneMutation = useMutation({
