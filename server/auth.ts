@@ -3,9 +3,50 @@ import jwt from "jsonwebtoken";
 import type { Request, Response, NextFunction } from "express";
 import { storage } from "./storage";
 import type { User } from "@shared/schema";
+import * as dotenv from 'dotenv';
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
-const JWT_EXPIRES_IN = "7d";
+dotenv.config();
+
+// Validate and set JWT configuration
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
+
+// Security check for production environment
+if (process.env.NODE_ENV === 'production') {
+  if (!JWT_SECRET || JWT_SECRET === "your-secret-key-change-in-production") {
+    throw new Error(
+      'FATAL: JWT_SECRET is not properly configured in production. ' +
+      'Set a strong secret in your environment variables.'
+    );
+  }
+
+  if (JWT_SECRET.length < 32) {
+    throw new Error(
+      'FATAL: JWT_SECRET must be at least 32 characters long in production'
+    );
+  }
+}
+
+// Fallback for development environment
+const devSecret = crypto.randomBytes(32).toString('hex');
+const effectiveJwtSecret = JWT_SECRET || devSecret;
+
+// Example usage in your authentication routes
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    // ... your existing login logic
+    
+    const token = jwt.sign(
+      { 
+        id: user.id, 
+        userId: user.id, 
+        email: user.email, 
+        role: user.role 
+      },
+      effectiveJwtSecret,
+      { expiresIn: JWT_EXPIRES_IN }
+    );
+
 
 export interface AuthenticatedRequest extends Request {
   user?: User;
