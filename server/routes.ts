@@ -13,7 +13,6 @@ import {
   insertReviewSchema 
 } from "@shared/schema";
 import { z } from "zod";
-// Remove this duplicate import since authenticate is already imported above
 import { db } from "./db";
 import { users, products, vendors, installers, orders, reviews, carts } from "../shared/schema";
 import { eq, desc, sql, and, ilike, or, count } from "drizzle-orm";
@@ -25,7 +24,6 @@ import crypto from "crypto";
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Add cookie parser middleware
   app.use(cookieParser());
 
   // Authentication routes
@@ -33,26 +31,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       let { email, password, firstName, lastName, role = "buyer" } = req.body;
 
-      // Map trader to vendor for backward compatibility
-      if (role === 'trader') {
-        role = 'vendor';
-      }
+      if (role === 'trader') role = 'vendor';
 
-      // Validate input
       if (!email || !password || !firstName || !lastName) {
         return res.status(400).json({ message: "All fields are required" });
       }
 
-      // Check if user already exists
       const existingUser = await db.select().from(users).where(eq(users.email, email)).limit(1);
       if (existingUser.length > 0) {
         return res.status(400).json({ message: "User already exists" });
       }
 
-      // Hash password
       const hashedPassword = await bcrypt.hash(password, 10);
-
-      // Create user
       const [newUser] = await db.insert(users).values({
         email,
         password: hashedPassword,
@@ -61,7 +51,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         role,
       }).returning();
 
-      // Auto-create installer profile if role is installer
       if (role === 'installer') {
         await storage.createInstaller({
           userId: newUser.id,
@@ -75,7 +64,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Auto-create vendor profile if role is vendor or trader
       if (role === 'vendor' || role === 'trader') {
         await storage.createVendor({
           userId: newUser.id,
@@ -88,15 +76,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Generate JWT token
       const token = jwt.sign({ userId: newUser.id, email: newUser.email, role: newUser.role }, JWT_SECRET, { expiresIn: "7d" });
 
-      // Set cookie
       res.cookie("auth-token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        maxAge: 7 * 24 * 60 * 60 * 1000,
         path: "/",
       });
 
@@ -845,14 +831,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       res.json(registrationData);
-    }```python
-     catch (error) {
+      } catch (error) {
       console.error("Error fetching registration reports:", error);
       res.status(500).json({ message: "Failed to fetch registration reports" });
-    }
-  });
+      }
+      });
 
-  app.get('/api/admin/reports/sales', authenticate, async (req: AuthenticatedRequest, res) => {
+
+  app.get('/api/admin/reports/registrations', authenticate, async (req: AuthenticatedRequest, res) => {
     try {
       const userId = req.user!.id;
       const user = await storage.getUser(userId);
@@ -860,6 +846,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (user?.role !== 'admin') {
         return res.status(403).json({ message: "Access denied" });
       }
+
+      
 
       // Mock sales data
       const salesData = {
