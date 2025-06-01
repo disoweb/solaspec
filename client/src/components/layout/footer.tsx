@@ -1,10 +1,76 @@
 import { Link } from "wouter";
-import { Zap } from "lucide-react";
+import { Zap, ShieldCheck, BadgeCheck, Lock, Star } from "lucide-react";
 
 export default function Footer() {
   return (
     <footer className="bg-gray-900 text-white py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Trust Indicators Section - Added above main footer content */}
+        <div className="bg-gray-800 rounded-lg p-6 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Security Badges */}
+            <div className="flex flex-col items-center">
+              <div className="flex items-center mb-3">
+                <Lock className="w-5 h-5 text-green-400 mr-2" />
+                <span className="font-medium">Secure Payments</span>
+              </div>
+              <div className="flex space-x-4">
+                <img 
+                  src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/visa/visa-original.svg" 
+                  alt="Visa" 
+                  className="h-8 w-auto opacity-80 hover:opacity-100 transition-opacity"
+                />
+                <img 
+                  src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mastercard/mastercard-original.svg" 
+                  alt="Mastercard" 
+                  className="h-8 w-auto opacity-80 hover:opacity-100 transition-opacity"
+                />
+                <img 
+                  src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/paypal/paypal-original.svg" 
+                  alt="PayPal" 
+                  className="h-8 w-auto opacity-80 hover:opacity-100 transition-opacity"
+                />
+              </div>
+            </div>
+
+            {/* Customer Testimonials */}
+            <div className="border-l border-r border-gray-700 px-6">
+              <div className="flex items-center mb-3">
+                <Star className="w-5 h-5 text-yellow-400 mr-2" />
+                <span className="font-medium">Customer Reviews</span>
+              </div>
+              <div className="flex items-center">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                ))}
+                <span className="ml-2 text-sm text-gray-300">4.9/5 (1,243 reviews)</span>
+              </div>
+              <p className="mt-2 text-sm text-gray-400 italic">
+                "SolarConnect's escrow protection gave me peace of mind during my solar installation."
+              </p>
+            </div>
+
+            {/* Trust Seals */}
+            <div className="flex flex-col items-center">
+              <div className="flex items-center mb-3">
+                <ShieldCheck className="w-5 h-5 text-blue-400 mr-2" />
+                <span className="font-medium">Trust & Safety</span>
+              </div>
+              <div className="flex space-x-4">
+                <div className="bg-gray-700 rounded-lg p-2 flex items-center">
+                  <BadgeCheck className="w-6 h-6 text-green-400 mr-2" />
+                  <span className="text-xs">Verified<br/>Vendors</span>
+                </div>
+                <div className="bg-gray-700 rounded-lg p-2 flex items-center">
+                  <ShieldCheck className="w-6 h-6 text-blue-400 mr-2" />
+                  <span className="text-xs">Escrow<br/>Protected</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Original Footer Content */}
         <div className="grid md:grid-cols-4 gap-8">
           {/* Brand */}
           <div>
@@ -96,6 +162,7 @@ export default function Footer() {
           </div>
         </div>
 
+        {/* Bottom Footer with Policies */}
         <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
           <p className="text-gray-400">&copy; 2025 Solaspec. All rights reserved.</p>
           <div className="flex space-x-6 mt-4 md:mt-0">

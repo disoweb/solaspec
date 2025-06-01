@@ -1,0 +1,50 @@
+Vendor Badges System
+Configure vendor badges and award them to vendors manually, or automatically 
+based on group or conditions (order number, sales value, registration time). 
+Built with performance in mind, badges use a smart cache system that refreshes 
+vendor badges every 24 hours.
+
+
+Seller Verification
+Configure verification items for your vendors to upload (e.g. proof of address,
+ proof of identity, company license, etc). Set requirements by vendor group. 
+Documents are checked in the backend and a log is saved. Vendors are notified 
+of document status by email.
+
+
+Abuse Reports System
+Through the abuse reports feature, customers can report products that appear 
+fake or suspicious. This module also allows vendors to report reviews. 
+Shop admin receives and reviews reports in the site backend.
+
+
+Store Policies
+Each vendor can configure and format their own store policies. Dedicated 
+policies tab will be displayed on the vendor’s store page.
+
+
+Store Reviews
+Through the store reviews module, customers can leave reviews for products, 
+which are aggregated and displayed on vendor pages. Vendors can report reviews 
+to the store admin, as well as write a public reply. Reviews generate email 
+notifications that are sent to vendors. The marketplace admin can view all 
+reviews in the site backend.
+
+Announcements
+Through the announcements feature, the market admin can broadcast an 
+announcement message to specific vendors or groups. Announcements can also 
+result in email notifications, based on each vendor’s email preference 
+settings.
+
+
+Favorite Stores (Followers)
+The favorite stores module allows customers to follow specific stores. 
+Customers can view their favorite stores in their My Account pages. 
+Through the use of shortcodes, you can create special pages where only 
+favorite stores’ products are shown.
+
+
+Store Support Options
+Vendors can provide store support to customers, either through an external 
+platform, via email, or through the built-in messaging tool. Verified customers
+ can request support on order and store pages.
