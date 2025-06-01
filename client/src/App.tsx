@@ -17,6 +17,7 @@ import Installers from "./pages/installers";
 import NotFound from "./pages/not-found";
 import "./index.css";
 import InstallerDashboard from "./pages/installer-dashboard";
+import { lazy } from 'react';
 
 function App() {
   return (
@@ -31,11 +32,13 @@ function App() {
             <Route path="/marketplace" component={Marketplace} />
             <Route path="/categories" component={Categories} />
             <Route path="/product/:id" component={ProductDetails} />
-            <Route path="/buyer-dashboard" component={BuyerDashboard} />
-            <Route path="/vendor-dashboard" component={VendorDashboard} />
-            <Route path="/admin-dashboard" component={AdminDashboard} />
             <Route path="/installers" component={Installers} />
+            <Route path="/checkout" component={lazy(() => import("@/pages/checkout"))} />
+            <Route path="/order-confirmation/:orderId" component={lazy(() => import("@/pages/order-confirmation"))} />
+            <Route path="/admin-dashboard" component={AdminDashboard} />
+            <Route path="/vendor-dashboard" component={VendorDashboard} />
             <Route path="/installer-dashboard" component={InstallerDashboard} />
+            <Route path="/buyer-dashboard" component={BuyerDashboard} />
             <Route component={NotFound} />
           </Switch>
           <Toaster />

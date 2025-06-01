@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -100,7 +99,7 @@ export default function Cart({ isOpen, onClose }: CartProps) {
       // Create orders for each vendor
       for (const vendorGroup of Object.values(cartByVendor)) {
         const vendor = vendorGroup as any;
-        
+
         for (const item of vendor.items) {
           const orderData = {
             vendorId: vendor.vendorId,
