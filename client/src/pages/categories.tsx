@@ -1,201 +1,162 @@
 
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Grid, List, Filter, Package, TrendingUp } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Slider } from "@/components/ui/slider";
+import { Search, Filter, Grid, List, Star, MapPin, SlidersHorizontal } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import ProductCard from "@/components/product-card";
-import { Link } from "wouter";
+
+const categoryData = {
+  residential: {
+    name: "Residential Solar",
+    icon: "🏠",
+    description: "Complete solar solutions for homes",
+    subcategories: ["Solar Panels", "Inverters", "Batteries", "Mounting Systems", "Monitoring"],
+    brands: ["Tesla", "SunPower", "LG", "Panasonic", "Enphase"],
+  },
+  commercial: {
+    name: "Commercial Solar",
+    icon: "🏢",
+    description: "Scalable solar systems for businesses",
+    subcategories: ["High-Power Panels", "String Inverters", "Commercial Batteries", "Tracking Systems"],
+    brands: ["First Solar", "Canadian Solar", "Trina Solar", "JinkoSolar"],
+  },
+  industrial: {
+    name: "Industrial Solar",
+    icon: "🏭",
+    description: "Large-scale solar installations",
+    subcategories: ["Utility Panels", "Central Inverters", "Grid-Tie Systems", "Power Optimizers"],
+    brands: ["LONGi", "JA Solar", "Risen Energy", "GCL"],
+  },
+};
 
 export default function Categories() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [sortBy, setSortBy] = useState("popular");
+  const [, setLocation] = useLocation();
+  const [activeCategory, setActiveCategory] = useState("residential");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [priceRange, setPriceRange] = useState([0, 50000]);
+  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+  const [selectedSubcategories, setSelectedSubcategories] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState("relevance");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [showFilters, setShowFilters] = useState(false);
 
-  const { data: products, isLoading } = useQuery({
-    queryKey: ["/api/products", selectedCategory, searchTerm, sortBy],
-  });
-
-  const categories = [
-    {
-      id: "",
-      name: "All Categories",
-      description: "Browse all solar products",
-      image: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=300&h=200&fit=crop",
-      count: 351,
-      subcategories: [],
-    },
-    {
-      id: "residential",
-      name: "Residential Solar",
-      description: "Home solar solutions for every budget",
-      image: "https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=300&h=200&fit=crop",
-      count: 150,
-      subcategories: [
-        { id: "rooftop", name: "Rooftop Systems", count: 89 },
-        { id: "ground-mount", name: "Ground Mount", count: 34 },
-        { id: "solar-shingles", name: "Solar Shingles", count: 27 },
-      ],
-    },
-    {
-      id: "commercial",
-      name: "Commercial Solar",
-      description: "Business and commercial installations",
-      image: "https://images.unsplash.com/photo-1540574163026-643ea20ade25?w=300&h=200&fit=crop",
-      count: 89,
-      subcategories: [
-        { id: "office-buildings", name: "Office Buildings", count: 45 },
-        { id: "retail-stores", name: "Retail Stores", count: 28 },
-        { id: "warehouses", name: "Warehouses", count: 16 },
-      ],
-    },
-    {
-      id: "industrial",
-      name: "Industrial Solar",
-      description: "Large-scale industrial installations",
-      image: "https://images.unsplash.com/photo-1509391366360-2e959784a276?w=300&h=200&fit=crop",
-      count: 45,
-      subcategories: [
-        { id: "utility-scale", name: "Utility Scale", count: 25 },
-        { id: "manufacturing", name: "Manufacturing", count: 12 },
-        { id: "agriculture", name: "Agriculture", count: 8 },
-      ],
-    },
-    {
-      id: "components",
-      name: "Solar Components",
-      description: "Individual components and parts",
-      image: "https://images.unsplash.com/photo-1509391366360-2e959784a276?w=300&h=200&fit=crop",
-      count: 67,
-      subcategories: [
-        { id: "solar-panels", name: "Solar Panels", count: 28 },
-        { id: "inverters", name: "Inverters", count: 22 },
-        { id: "batteries", name: "Batteries", count: 17 },
-      ],
-    },
-  ];
-
-  const filteredProducts = products?.filter((product: any) => {
-    const matchesSearch = !searchTerm || product.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = !selectedCategory || product.type === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
-
-  const sortedProducts = filteredProducts?.sort((a: any, b: any) => {
-    switch (sortBy) {
-      case "price-low":
-        return parseFloat(a.price) - parseFloat(b.price);
-      case "price-high":
-        return parseFloat(b.price) - parseFloat(a.price);
-      case "newest":
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      case "rating":
-        return (b.rating || 0) - (a.rating || 0);
-      default:
-        return 0;
+  // Get category from URL params
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const categoryParam = urlParams.get("type");
+    if (categoryParam && categoryData[categoryParam as keyof typeof categoryData]) {
+      setActiveCategory(categoryParam);
     }
+  }, []);
+
+  const { data: products = [], isLoading } = useQuery({
+    queryKey: ["/api/products", {
+      type: activeCategory,
+      search: searchQuery,
+      minPrice: priceRange[0],
+      maxPrice: priceRange[1],
+      brands: selectedBrands,
+      subcategories: selectedSubcategories,
+      sortBy,
+    }],
   });
+
+  const currentCategory = categoryData[activeCategory as keyof typeof categoryData];
+
+  const handleBrandToggle = (brand: string) => {
+    setSelectedBrands(prev =>
+      prev.includes(brand)
+        ? prev.filter(b => b !== brand)
+        : [...prev, brand]
+    );
+  };
+
+  const handleSubcategoryToggle = (subcategory: string) => {
+    setSelectedSubcategories(prev =>
+      prev.includes(subcategory)
+        ? prev.filter(s => s !== subcategory)
+        : [...prev, subcategory]
+    );
+  };
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setPriceRange([0, 50000]);
+    setSelectedBrands([]);
+    setSelectedSubcategories([]);
+  };
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
-
-      {/* Hero Section */}
-      <section className="solar-gradient py-12">
-        <div className="max-w-7xl mx-auto container-mobile">
+      
+      {/* Category Header */}
+      <section className="bg-gradient-to-r from-blue-50 to-white py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8">
-            <h1 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
-              Solar Product Categories
-            </h1>
-            <p className="text-xl text-muted-foreground mb-6">
-              Browse our comprehensive selection of solar solutions
-            </p>
+            <div className="text-6xl mb-4">{currentCategory.icon}</div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">{currentCategory.name}</h1>
+            <p className="text-xl text-gray-600">{currentCategory.description}</p>
           </div>
+
+          {/* Category Navigation */}
+          <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full">
+            <TabsList className="grid w-full grid-cols-3 max-w-md mx-auto">
+              <TabsTrigger value="residential">Residential</TabsTrigger>
+              <TabsTrigger value="commercial">Commercial</TabsTrigger>
+              <TabsTrigger value="industrial">Industrial</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
       </section>
 
-      {/* Categories Grid */}
-      <section className="py-12">
-        <div className="max-w-7xl mx-auto container-mobile">
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-            {categories.map((category) => (
-              <Card 
-                key={category.id} 
-                className={`overflow-hidden hover:shadow-xl transition-all cursor-pointer group ${
-                  selectedCategory === category.id ? 'ring-2 ring-blue-600' : ''
-                }`}
-                onClick={() => setSelectedCategory(category.id)}
-              >
-                <div className="relative h-48">
-                  <img 
-                    src={category.image}
-                    alt={category.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                  />
-                  <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors" />
-                  <div className="absolute bottom-4 left-4 text-white">
-                    <h3 className="text-xl font-bold">{category.name}</h3>
-                    <p className="text-sm opacity-90">{category.description}</p>
-                  </div>
-                  <Badge className="absolute top-4 right-4 bg-white/90 text-black">
-                    {category.count} products
-                  </Badge>
-                </div>
-                
-                {category.subcategories.length > 0 && (
-                  <CardContent className="p-4">
-                    <div className="space-y-2">
-                      <h4 className="font-medium text-sm text-muted-foreground">Subcategories:</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {category.subcategories.map((sub) => (
-                          <Badge key={sub.id} variant="outline" className="text-xs">
-                            {sub.name} ({sub.count})
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </CardContent>
-                )}
-              </Card>
-            ))}
-          </div>
-
-          {/* Filters and Search */}
-          <div className="flex flex-col lg:flex-row gap-4 items-center justify-between mb-8">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <Input
-                placeholder="Search products..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+      {/* Search and Filters */}
+      <section className="py-6 bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
+            {/* Search Bar */}
+            <div className="flex-1 max-w-md">
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
             </div>
 
-            <div className="flex items-center space-x-4">
-              <select 
-                value={sortBy} 
-                onChange={(e) => setSortBy(e.target.value)}
-                className="px-3 py-2 border rounded-md bg-background"
-              >
-                <option value="popular">Most Popular</option>
-                <option value="newest">Newest</option>
-                <option value="price-low">Price: Low to High</option>
-                <option value="price-high">Price: High to Low</option>
-                <option value="rating">Highest Rated</option>
-              </select>
+            {/* Sort and View Options */}
+            <div className="flex items-center gap-4">
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="relevance">Relevance</SelectItem>
+                  <SelectItem value="price-low">Price: Low to High</SelectItem>
+                  <SelectItem value="price-high">Price: High to Low</SelectItem>
+                  <SelectItem value="rating">Customer Rating</SelectItem>
+                  <SelectItem value="newest">Newest First</SelectItem>
+                </SelectContent>
+              </Select>
 
-              <div className="flex border rounded-lg">
+              <div className="flex border rounded-md">
                 <Button
                   variant={viewMode === "grid" ? "default" : "ghost"}
                   size="sm"
                   onClick={() => setViewMode("grid")}
-                  className="rounded-r-none"
                 >
                   <Grid className="w-4 h-4" />
                 </Button>
@@ -203,78 +164,161 @@ export default function Categories() {
                   variant={viewMode === "list" ? "default" : "ghost"}
                   size="sm"
                   onClick={() => setViewMode("list")}
-                  className="rounded-l-none"
                 >
                   <List className="w-4 h-4" />
                 </Button>
               </div>
+
+              <Button
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                className="lg:hidden"
+              >
+                <SlidersHorizontal className="w-4 h-4 mr-2" />
+                Filters
+              </Button>
             </div>
           </div>
+        </div>
+      </section>
 
-          {/* Products Results */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-foreground">
-                {selectedCategory ? 
-                  categories.find(c => c.id === selectedCategory)?.name || "Products" : 
-                  "All Products"
-                }
-              </h2>
-              <p className="text-muted-foreground">
-                {sortedProducts?.length || 0} products found
-              </p>
-            </div>
-            {selectedCategory && (
-              <div className="mt-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => setSelectedCategory("")}
-                >
-                  Clear Category Filter
-                </Button>
-              </div>
-            )}
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Filters Sidebar */}
+          <div className={`lg:w-64 space-y-6 ${showFilters ? 'block' : 'hidden lg:block'}`}>
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle className="text-lg">Filters</CardTitle>
+                  <Button variant="ghost" size="sm" onClick={clearFilters}>
+                    Clear All
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Price Range */}
+                <div>
+                  <h3 className="font-medium mb-3">Price Range</h3>
+                  <Slider
+                    value={priceRange}
+                    onValueChange={setPriceRange}
+                    max={50000}
+                    step={500}
+                    className="mb-2"
+                  />
+                  <div className="flex justify-between text-sm text-gray-600">
+                    <span>${priceRange[0].toLocaleString()}</span>
+                    <span>${priceRange[1].toLocaleString()}</span>
+                  </div>
+                </div>
+
+                {/* Subcategories */}
+                <div>
+                  <h3 className="font-medium mb-3">Product Type</h3>
+                  <div className="space-y-2">
+                    {currentCategory.subcategories.map((subcategory) => (
+                      <div key={subcategory} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={subcategory}
+                          checked={selectedSubcategories.includes(subcategory)}
+                          onCheckedChange={() => handleSubcategoryToggle(subcategory)}
+                        />
+                        <label htmlFor={subcategory} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          {subcategory}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Brands */}
+                <div>
+                  <h3 className="font-medium mb-3">Brands</h3>
+                  <div className="space-y-2">
+                    {currentCategory.brands.map((brand) => (
+                      <div key={brand} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={brand}
+                          checked={selectedBrands.includes(brand)}
+                          onCheckedChange={() => handleBrandToggle(brand)}
+                        />
+                        <label htmlFor={brand} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          {brand}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Features */}
+                <div>
+                  <h3 className="font-medium mb-3">Features</h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="warranty" />
+                      <label htmlFor="warranty" className="text-sm">Extended Warranty</label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="certified" />
+                      <label htmlFor="certified" className="text-sm">Certified Products</label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="installation" />
+                      <label htmlFor="installation" className="text-sm">Installation Included</label>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Products Grid */}
-          {isLoading ? (
-            <div className={viewMode === "grid" ? "grid md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-6"}>
-              {[...Array(6)].map((_, i) => (
-                <Card key={i} className="animate-pulse">
-                  <div className="h-48 bg-muted rounded-t-lg"></div>
-                  <CardContent className="p-6">
-                    <div className="h-4 bg-muted rounded mb-2"></div>
-                    <div className="h-4 bg-muted rounded w-3/4 mb-4"></div>
-                    <div className="h-8 bg-muted rounded"></div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : sortedProducts && sortedProducts.length > 0 ? (
-            <div className={viewMode === "grid" ? "grid md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-6"}>
-              {sortedProducts.map((product: any) => (
-                <ProductCard 
-                  key={product.id} 
-                  product={product} 
-                  layout={viewMode}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-foreground mb-2">No Products Found</h3>
-              <p className="text-muted-foreground mb-4">
-                Try adjusting your search criteria or browse all categories
+          <div className="flex-1">
+            <div className="mb-6">
+              <p className="text-gray-600">
+                Showing {products.length} products in {currentCategory.name}
               </p>
-              <Button onClick={() => {setSearchTerm(""); setSelectedCategory("")}} variant="outline">
-                Clear All Filters
-              </Button>
             </div>
-          )}
+
+            {isLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[...Array(6)].map((_, i) => (
+                  <Card key={i} className="animate-pulse">
+                    <div className="h-48 bg-gray-200 rounded-t-lg"></div>
+                    <CardContent className="p-4">
+                      <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                      <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className={viewMode === "grid" 
+                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                : "space-y-4"
+              }>
+                {products.map((product: any) => (
+                  <ProductCard 
+                    key={product.id} 
+                    product={product} 
+                    viewMode={viewMode}
+                  />
+                ))}
+              </div>
+            )}
+
+            {products.length === 0 && !isLoading && (
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">🔍</div>
+                <h3 className="text-xl font-semibold mb-2">No products found</h3>
+                <p className="text-gray-600 mb-4">Try adjusting your filters or search criteria</p>
+                <Button onClick={clearFilters}>Clear Filters</Button>
+              </div>
+            )}
+          </div>
         </div>
-      </section>
+      </div>
 
       <Footer />
     </div>
