@@ -9,7 +9,7 @@ import { useState, useEffect } from "react";
 import { Zap, Eye, EyeOff, Shield, Loader2 } from "lucide-react";
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const [, setLocation] = useLocation();
 
   // Get search params from URL
