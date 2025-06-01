@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
@@ -84,7 +83,7 @@ export default function BuyerDashboard() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <div className="max-w-7xl mx-auto container-mobile py-6">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">
@@ -226,21 +225,21 @@ export default function BuyerDashboard() {
                         <span>Browse Products</span>
                       </Link>
                     </Button>
-                    
+
                     <Button asChild variant="outline" className="h-20 flex-col space-y-2">
                       <Link href="/installers">
                         <Users className="w-6 h-6" />
                         <span>Find Installers</span>
                       </Link>
                     </Button>
-                    
+
                     <Button asChild variant="outline" className="h-20 flex-col space-y-2">
                       <Link href="/categories">
                         <Package className="w-6 h-6" />
                         <span>Categories</span>
                       </Link>
                     </Button>
-                    
+
                     <Button variant="outline" className="h-20 flex-col space-y-2">
                       <Heart className="w-6 h-6" />
                       <span>Wishlist</span>
@@ -297,7 +296,7 @@ export default function BuyerDashboard() {
                       ${walletBalance?.toLocaleString() || '0.00'}
                     </p>
                   </div>
-                  
+
                   <div className="space-y-4">
                     <h4 className="font-medium">Recent Transactions</h4>
                     <div className="text-center py-8 text-muted-foreground">
@@ -337,7 +336,7 @@ export default function BuyerDashboard() {
                       <p className="text-lg capitalize">{user.role}</p>
                     </div>
                   </div>
-                  
+
                   <div className="pt-4">
                     <Button variant="outline">Edit Profile</Button>
                   </div>
@@ -347,8 +346,10 @@ export default function BuyerDashboard() {
           </TabsContent>
         </Tabs>
       </div>
-      
+
       <Footer />
     </div>
   );
 }
+export default BuyerDashboard;
+export { BuyerDashboard };
