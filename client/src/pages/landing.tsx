@@ -186,9 +186,8 @@ export default function Landing() {
               </h1>
 
               <p className="text-base sm:text-lg lg:text-xl text-muted-foreground mb-6 sm:mb-8">
-                Connect with certified solar vendors and installers. Shop with
-                confidence using our secure escrow system and pay in flexible
-                installments.
+                Connect with certified solar vendors and installers. Go green with
+                confidence using our secure escrow payment system that protect both buyer and vendor. We also offer flexible financing options.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 mb-8">
@@ -215,7 +214,7 @@ export default function Landing() {
                     Verified Vendors
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Verified
+                   Quality Assurance
                   </p>
                 </div>
                 <div className="text-center">
