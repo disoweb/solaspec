@@ -65,7 +65,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalInstallations: 0,
           serviceAreas: ["Local Area"],
           certifications: [],
-          availability: new Date().toISOString(),
+          availability: new Date(),
           verified: false,
         });
       }
