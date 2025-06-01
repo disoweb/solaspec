@@ -1,0 +1,261 @@
+implement these fully, systematically and robustly. Make sure to 
+completel all of these features before stopping
+
+Home Screen
+The home page designed to make the product close to the user, 
+On the top you can find a search bar and the different collection 
+that the app has.
+
+Categories Screen
+Categories Page To make the user experience good we made the categories. 
+Here users can better navigate and find products, browsing them by categories.
+
+
+Cart – Checkout
+To make the users comfortable while they purchase the products, 
+We focused on making the cart and cart and the checkout screens simple 
+with just the necessary information.
+
+Product Page
+The product page provides easy access to all the information that the user 
+needs to understand the products from the price to the sizes.
+
+
+Sellers Page
+Create and manage sellers easily from the backend, customize and set 
+exclusive options and settings for each seller independently of other sellers
+
+Premium Design Vendor Dashboard
+Frontend Vendor Product Management – Simple, Variable, Virtual, Downloadable Products (Digital), Inventory, Shipping, Upsells & Cross-sells, Attributes, etc
+Vendor Order Management
+Unique Vendor Store & Product Pages
+Vendor Coupon Management – Min and Max Spend, Usage Limits, etc
+Vendor Earnings, Charts & Reports
+Store Reviews & Feedback – Vendors Can Reply or Report Reviews
+Favorite (Follow) Stores
+Refund Requests – Approval System
+Advanced Vendor Shipping by Zone
+Color Scheme Customizer for Dashboard
+Complex Commissions System – Flat, Percentage and Combined Commissions by Vendor, Category, or Tag
+Order Splitter System – Multivendor Orders are Split into Multiple Suborders
+and many more advanced, powerful features, ideal for multivendor stores:
+
+Vendor Products Import & Export
+Single Product Multiple Vendors
+Product & Vendor Inquiries & Messaging
+Marketplace Reports & Statistics for Sales, Commissions, Orders & Registrations
+Vendor Registration System with 9+ Types of Custom Fields, Manual or Automatic Approval, Become a Vendor page
+Announcements System
+Vendor Payouts – Balance History – Bonus Payments
+Vendor Vacation Module
+Vendor Groups & Memberships – Configure Features & Limits by Group
+Seller Documentation & Knowledgebase
+Vendor Document Verification
+Automatic Group Transfer Rules (e.g. When a vendor sells $100,000+, they’re moved to the VIP Group with better commissions)
+Store Notices
+Messaging System between Admin, Vendor & Customers
+Store Support System with 3 Support Methods
+Vendor Teams & Staff – Complex Configurable Permissions
+PDF Vendor Invoices, Packing Slips, Shipping Labels & more (New!)
+Store SEO Settings
+Store Policies
+Vendor Membership Packages & Subscriptions – Vendors make one-time or subscription purchases to unlock features (e.g. product number limits, types, invoices, special badges, upsells, etc.)
+Vendor Withdrawals
+Abuse Reports System for Products & Reviews
+Wholesale & B2B – B2BKing Integration – Quotes, Offers, Minimums, Package Quantities, Product Visibility
+Vendor Badges & Achievements
+Shipping Tracking – Supports DHL, UPS, TNT, DPD, Fedex, USPS, Royal Mail, and more. (New!)
+Stripe Connect Split Pay – Supports 3D Secure 2, Automatic Refunds, Automatic Split Payments. Complete standalone solution for Stripe Integration. (New!)
+Elementor Integration – Design Vendor Store Pages with Elementor. (New!)
+Store Categories – Organize and Sort Vendors by Category. (New!)
+Auctions – Vendors Create and Manage their own Auctions. (New!)
+Product Bundles – Sell Bundles, Packages, Assembled Products, etc. (New!)
+Bookings – Reservations, Appointments, Accommodation, Rentals. (New!)
+Vendor Social Media Profiles. (New!)
+Subscriptions – Vendors Sell Subscriptions for Recurring Revenue. (New!)
+Advertising – Vendors Purchase Product Ads. (New!)
+Stunning Designs and Proprietary Systems
+
+
+Vendor Product Management
+Natively integrated WooCommerce product management capabilities for 
+vendors (restricted based on shop settings). Vendors can add & configure 
+simple products, variations, categories, image galleries, product tags, 
+upsells, linked products, digital downloads, etc
+
+Vendor Order Management
+Sellers can manage their own orders through the vendor dashboard. They can 
+add order notes, configure downloadable product permissions, download invoice 
+or packing slip, etc:
+
+
+Single Product Multiple Vendors
+Advanced single product multiple vendors module, with stock & vendor priority settings, positioning control, smart cache, easy ‘add to store’ button, backend management, and more.
+
+Vendors can edit and set product details, images & prices.
+Optionally, vendors can be restricted to only selling existing store products.
+Market admin can assign sellers to specific products from the backend
+Set priority by price, vendor rating, or available stock
+
+Stripe Connect – Automatic Split Payments (New!)
+The Stripe Connect module allows vendors to connect their Stripe accounts, and 
+receive automatic split payments. Refunds are also issued automatically by 
+vendors with no admin intervention needed. No other Stripe plugin is needed – 
+this is a complete standalone solution.
+
+Vendor Products Import & Export
+Vendors can add products in bulk, as well as download customizable CSV lists 
+of their products, via their vendor dashboard, through the import/export 
+module:
+
+Marketplace Reports & Charts
+Dedicated reports panel in the admin backend shows new registrations, order 
+numbers, sales & commissions by vendor, and for the entire marketplace:
+
+Vendor Registration, Custom Fields, and Approval
+Powerful registration module allows you to set up multiple registration 
+options, choose from 9+ types of custom fields, review & approve vendors 
+automatically or manually. Use ‘My Account’ page, or separate 
+‘Become a Vendor’ page:
+
+
+Refunds Requests
+Refund requests module with dedicated panels, messaging and decision systems:
+
+Vendor Team & Staff
+Vendors can add their own teams and staff and configure detailed permissions 
+and panel access capabilities:
+
+
+ayouts & Withdrawals
+Pay your vendors and use MarketKing’s payouts system to record and keep track 
+of balances. Payout emails are sent, and payments are registered in the vendor 
+balance history. Supports bonus payments, and vendor withdrawal requests. 
+If Stripe Connect integration is used, Payouts are not necessary – vendors 
+get paid automatically in their Stripe accounts, as orders are placed.
+
+
+Vendor Groups & Group Transfer Rules
+You can organize vendors into groups and set specific limits 
+(e.g. allowed product numbers, types or categories), available panels, 
+commission levels, announcements, badges, etc by group. For example, 
+one group of vendors can have access to Coupons, Invoicing, 
+SEO and the Vacation feature, while another can only access basic 
+features such as product and order management. Group membership can be tied 
+to a paid subscription or single purchase.
+
+Through group transfer rules, you can automatically move vendors across 
+groups (e.g. ‘New Vendors’ are moved to the ‘VIP’ group when they hit $500k 
+in total sales). When this happens, vendors can automatically get certain 
+badges, better commissions, access to new categories, etc.
+
+
+Vendor Coupon Management
+Each vendor can create and manage coupons for their own products. Native Woo 
+interface is used, so vendors have access to all standard features, usage 
+restrictions, limits, etc.
+
+
+Vendor Badges System
+Configure vendor badges and award them to vendors manually, or automatically 
+based on group or conditions (order number, sales value, registration time). 
+Built with performance in mind, badges use a smart cache system that refreshes 
+vendor badges every 24 hours.
+
+
+Seller Verification
+Configure verification items for your vendors to upload (e.g. proof of address,
+ proof of identity, company license, etc). Set requirements by vendor group. 
+Documents are checked in the backend and a log is saved. Vendors are notified 
+of document status by email.
+
+
+Abuse Reports System
+Through the abuse reports feature, customers can report products that appear 
+fake or suspicious. This module also allows vendors to report reviews. 
+Shop admin receives and reviews reports in the site backend.
+
+
+Store Policies
+Each vendor can configure and format their own store policies. Dedicated 
+policies tab will be displayed on the vendor’s store page.
+
+
+Store Reviews
+Through the store reviews module, customers can leave reviews for products, 
+which are aggregated and displayed on vendor pages. Vendors can report reviews 
+to the store admin, as well as write a public reply. Reviews generate email 
+notifications that are sent to vendors. The marketplace admin can view all 
+reviews in the site backend.
+
+Announcements
+Through the announcements feature, the market admin can broadcast an 
+announcement message to specific vendors or groups. Announcements can also 
+result in email notifications, based on each vendor’s email preference 
+settings.
+
+
+Favorite Stores (Followers)
+The favorite stores module allows customers to follow specific stores. 
+Customers can view their favorite stores in their My Account pages. 
+Through the use of shortcodes, you can create special pages where only 
+favorite stores’ products are shown.
+
+
+Store Support Options
+Vendors can provide store support to customers, either through an external 
+platform, via email, or through the built-in messaging tool. Verified customers
+ can request support on order and store pages.
+
+
+Messaging Module – Admin & Shop Communication
+MarketKing’s messaging module not only connects vendors and customers across 
+various features, but also allows easy communication between vendor and market 
+admins. Both vendors and admins can initiate conversations, discussing orders, 
+products, payouts, marketplace rules, etc.
+
+
+Vendor Invoices, Packing Slips, Shipping Labels
+Through the invoicing & packing module, each vendor can configure their own 
+invoice settings. PDF invoices are auto generated for each order and suborder 
+and can be downloaded by vendors via the order page. Vendors can add their 
+store name, address, logo, as well as any custom info such as VAT or company
+ data. Similarly, shipping labels, packing slips and more can be generated.
+
+
+Shipping Tracking (New!)
+The shipping tracking module allows vendors to enter tracking details for 
+their shipments. Customers are notified and can easily track their packages. 
+Supports DHL, TNT, Fedex, UPS, DPD, USPS, Royal Mail and more, and vendors 
+can also enter details for custom providers.
+
+
+Zone-Wise Shipping
+Through the advanced shipping module, each vendor can configure their own 
+shipping settings by zone. Vendors can use shipping classes, and the market 
+admin can also force enable specific methods for all vendors.
+
+
+MarketKing Cart – Cart Split by Vendor
+MarketKing has its own proprietary split cart system that separates products by vendor in the cart.
+
+Modern display style with highest conversion rates.
+Fees, discounts, taxes, etc are all split and displayed by vendor.
+Classic cart can also be enabled through settings.
+Same cart system used by large marketplaces such as Etsy.
+
+
+Order Splitter for Multi Vendor Orders
+Customers can order from multiple vendors at the same time, and MarketKing 
+will automatically split these orders into multiple sub-orders.
+
+Each vendor has access to only their own specific sub-orders.
+Customers pay for the combined order but can see the status of each individual 
+sub-order.
+Parent orders are excluded from analytics and reports so that reports and 
+statistics are always accurate.
+Fees, discounts, or coupons either go to their respective orders / products, 
+or are proportionally split between orders.
+
+
+
