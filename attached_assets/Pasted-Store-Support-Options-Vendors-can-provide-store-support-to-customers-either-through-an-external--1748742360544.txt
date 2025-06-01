@@ -1,0 +1,54 @@
+Store Support Options
+Vendors can provide store support to customers, either through an external 
+platform, via email, or through the built-in messaging tool. Verified customers
+ can request support on order and store pages.
+
+
+Messaging Module – Admin & Shop Communication
+MarketKing’s messaging module not only connects vendors and customers across 
+various features, but also allows easy communication between vendor and market 
+admins. Both vendors and admins can initiate conversations, discussing orders, 
+products, payouts, marketplace rules, etc.
+
+
+Vendor Invoices, Packing Slips, Shipping Labels
+Through the invoicing & packing module, each vendor can configure their own 
+invoice settings. PDF invoices are auto generated for each order and suborder 
+and can be downloaded by vendors via the order page. Vendors can add their 
+store name, address, logo, as well as any custom info such as VAT or company
+ data. Similarly, shipping labels, packing slips and more can be generated.
+
+
+Shipping Tracking (New!)
+The shipping tracking module allows vendors to enter tracking details for 
+their shipments. Customers are notified and can easily track their packages. 
+Supports DHL, TNT, Fedex, UPS, DPD, USPS, Royal Mail and more, and vendors 
+can also enter details for custom providers.
+
+
+Zone-Wise Shipping
+Through the advanced shipping module, each vendor can configure their own 
+shipping settings by zone. Vendors can use shipping classes, and the market 
+admin can also force enable specific methods for all vendors.
+
+
+MarketKing Cart – Cart Split by Vendor
+MarketKing has its own proprietary split cart system that separates products by vendor in the cart.
+
+Modern display style with highest conversion rates.
+Fees, discounts, taxes, etc are all split and displayed by vendor.
+Classic cart can also be enabled through settings.
+Same cart system used by large marketplaces such as Etsy.
+
+
+Order Splitter for Multi Vendor Orders
+Customers can order from multiple vendors at the same time, and MarketKing 
+will automatically split these orders into multiple sub-orders.
+
+Each vendor has access to only their own specific sub-orders.
+Customers pay for the combined order but can see the status of each individual 
+sub-order.
+Parent orders are excluded from analytics and reports so that reports and 
+statistics are always accurate.
+Fees, discounts, or coupons either go to their respective orders / products, 
+or are proportionally split between orders.
