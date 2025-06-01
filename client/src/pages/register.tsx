@@ -42,6 +42,7 @@ export default function Register() {
         const userData = response;
         switch (userData.role) {
           case 'vendor':
+          case 'trader':
             setLocation("/vendor-dashboard");
             break;
           case 'admin':
@@ -175,6 +176,10 @@ export default function Register() {
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="vendor" id="vendor" />
                     <Label htmlFor="vendor">Vendor - Sell solar systems</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="trader" id="trader" />
+                    <Label htmlFor="trader">Trader - Solar equipment trader</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="installer" id="installer" />

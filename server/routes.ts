@@ -31,7 +31,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication routes
   app.post("/api/auth/register", async (req, res) => {
     try {
-      const { email, password, firstName, lastName, role = "buyer" } = req.body;
+      let { email, password, firstName, lastName, role = "buyer" } = req.body;
+      
+      // Map trader to vendor for backward compatibility
+      if (role === 'trader') {
+        role = 'vendor';
+      }
 
       // Validate input
       if (!email || !password || !firstName || !lastName) {
@@ -70,8 +75,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Auto-create vendor profile if role is vendor
-      if (role === 'vendor') {
+      // Auto-create vendor profile if role is vendor or trader
+      if (role === 'vendor' || role === 'trader') {
         await storage.createVendor({
           userId: newUser.id,
           companyName: `${firstName} ${lastName} Solar Company`,
