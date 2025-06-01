@@ -32,7 +32,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/register", async (req, res) => {
     try {
       let { email, password, firstName, lastName, role = "buyer" } = req.body;
-      
+
       // Map trader to vendor for backward compatibility
       if (role === 'trader') {
         role = 'vendor';
@@ -95,8 +95,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.cookie("auth-token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
+        sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: "/",
       });
 
       const { password: _, ...userWithoutPassword } = newUser;
@@ -138,8 +139,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.cookie("auth-token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
+        sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: "/",
       });
 
       const { password: _, ...userWithoutPassword } = user;
@@ -473,7 +475,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ];
 
         const totalAmount = parseFloat(orderData.totalAmount);
-        
+
         for (const milestone of defaultMilestones) {
           await storage.createInstallationMilestone({
             orderId: order.id,
@@ -572,7 +574,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ];
 
         const totalAmount = parseFloat(orderData.totalAmount);
-        
+
         for (const milestone of defaultMilestones) {
           await storage.createInstallationMilestone({
             orderId: order.id,
@@ -679,13 +681,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const products = await storage.getProductsByVendor(vendor.id);
-      
+
       // Convert to CSV format
       const csvHeader = "name,description,price,capacity,type,warranty,efficiency,stockQuantity,minimumOrderQuantity,weight,dimensions,sku,locations\n";
       const csvRows = products.map(product => {
         const dimensions = product.dimensions ? JSON.stringify(product.dimensions) : '{}';
         const locations = Array.isArray(product.locations) ? product.locations.join(';') : '';
-        
+
         return [
           `"${product.name || ''}"`,
           `"${product.description || ''}"`,
@@ -704,7 +706,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }).join('\n');
 
       const csvContent = csvHeader + csvRows;
-      
+
       res.setHeader('Content-Type', 'text/csv');
       res.setHeader('Content-Disposition', 'attachment; filename="products.csv"');
       res.send(csvContent);
@@ -797,7 +799,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { timeRange } = req.query;
-      
+
       // Mock report data - replace with actual database queries
       const reportData = {
         totalRevenue: 2500000,
@@ -843,7 +845,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       res.json(registrationData);
-    } catch (error) {
+    }```python
+     catch (error) {
       console.error("Error fetching registration reports:", error);
       res.status(500).json({ message: "Failed to fetch registration reports" });
     }
@@ -1015,7 +1018,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const refundRequestId = parseInt(req.params.id);
       const userId = req.user!.id;
-      
+
       const messageData = {
         refundRequestId,
         senderId: userId,
@@ -1095,7 +1098,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.id;
       const vendor = await storage.getVendorByUserId(userId);
-      
+
       if (!vendor) {
         return res.status(404).json({ message: "Vendor profile not found" });
       }
@@ -1117,7 +1120,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.id;
       const vendor = await storage.getVendorByUserId(userId);
-      
+
       if (!vendor) {
         return res.status(404).json({ message: "Vendor profile not found" });
       }
@@ -1135,7 +1138,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.id;
       const vendor = await storage.getVendorByUserId(userId);
-      
+
       if (!vendor) {
         return res.status(404).json({ message: "Vendor profile not found" });
       }
@@ -1152,7 +1155,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.id;
       const vendor = await storage.getVendorByUserId(userId);
-      
+
       if (!vendor) {
         return res.status(404).json({ message: "Vendor profile not found" });
       }
@@ -1170,7 +1173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.id;
       const vendor = await storage.getVendorByUserId(userId);
-      
+
       if (!vendor) {
         return res.status(404).json({ message: "Vendor profile not found" });
       }
@@ -1192,7 +1195,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.id;
       const vendor = await storage.getVendorByUserId(userId);
-      
+
       if (!vendor) {
         return res.status(404).json({ message: "Vendor profile not found" });
       }
@@ -1210,7 +1213,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.id;
       const vendor = await storage.getVendorByUserId(userId);
-      
+
       if (!vendor) {
         return res.status(404).json({ message: "Vendor profile not found" });
       }
@@ -1232,7 +1235,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.id;
       const vendor = await storage.getVendorByUserId(userId);
-      
+
       if (!vendor) {
         return res.status(404).json({ message: "Vendor profile not found" });
       }
@@ -1250,7 +1253,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.id;
       const vendor = await storage.getVendorByUserId(userId);
-      
+
       if (!vendor) {
         return res.status(404).json({ message: "Vendor profile not found" });
       }
@@ -1306,7 +1309,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.id;
       const vendor = await storage.getVendorByUserId(userId);
-      
+
       if (!vendor) {
         return res.status(404).json({ message: "Vendor profile not found" });
       }
@@ -1323,7 +1326,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.id;
       const vendor = await storage.getVendorByUserId(userId);
-      
+
       if (!vendor) {
         return res.status(404).json({ message: "Vendor profile not found" });
       }
@@ -1341,7 +1344,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.id;
       const vendor = await storage.getVendorByUserId(userId);
-      
+
       if (!vendor) {
         return res.status(404).json({ message: "Vendor profile not found" });
       }
@@ -1461,7 +1464,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.id;
       const vendor = await storage.getVendorByUserId(userId);
-      
+
       if (!vendor) {
         return res.status(404).json({ message: "Vendor profile not found" });
       }
@@ -1478,7 +1481,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.id;
       const vendor = await storage.getVendorByUserId(userId);
-      
+
       if (!vendor) {
         return res.status(404).json({ message: "Vendor profile not found" });
       }
@@ -1636,9 +1639,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.id;
       const user = await storage.getUser(userId);
-      
+
       let filters: any = {};
-      
+
       if (user?.role === 'vendor') {
         const vendor = await storage.getVendorByUserId(userId);
         if (vendor) {
@@ -1675,7 +1678,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const ticketId = parseInt(req.params.id);
       const ticket = await storage.getSupportTicket(ticketId);
-      
+
       if (!ticket) {
         return res.status(404).json({ message: "Ticket not found" });
       }
@@ -1723,7 +1726,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.id;
       const vendor = await storage.getVendorByUserId(userId);
-      
+
       if (!vendor) {
         return res.status(404).json({ message: "Vendor profile not found" });
       }
@@ -1740,7 +1743,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.id;
       const vendor = await storage.getVendorByUserId(userId);
-      
+
       if (!vendor) {
         return res.status(404).json({ message: "Vendor profile not found" });
       }
@@ -1758,10 +1761,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Handle vendor registration with custom fields
       const registrationData = req.body;
-      
+
       // Create pending vendor application
       const application = await storage.createVendorApplication(registrationData);
-      
+
       res.status(201).json({ 
         message: "Registration submitted successfully",
         applicationId: application.id 
@@ -1800,7 +1803,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const vendorId = req.params.id;
       await storage.approveVendorApplication(vendorId);
-      
+
       res.json({ message: "Vendor approved successfully" });
     } catch (error) {
       console.error("Error approving vendor:", error);
@@ -1819,9 +1822,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const vendorId = req.params.id;
       const { reason } = req.body;
-      
+
       await storage.rejectVendorApplication(vendorId, reason);
-      
+
       res.json({ message: "Vendor application rejected" });
     } catch (error) {
       console.error("Error rejecting vendor:", error);

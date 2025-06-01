@@ -9,8 +9,12 @@ import { useState, useEffect } from "react";
 import { Zap, Eye, EyeOff, Shield, Loader2 } from "lucide-react";
 
 export default function Login() {
+  const { login } = useAuth();
   const [, setLocation] = useLocation();
-  const { login, user } = useAuth();
+
+  // Get search params from URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const isAdminLogin = urlParams.get('admin') === 'true';
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -19,8 +23,7 @@ export default function Login() {
   const [isAnimating, setIsAnimating] = useState(false);
 
   // Check if this is admin login
-  const urlParams = new URLSearchParams(window.location.search);
-  const isAdminLogin = urlParams.get('admin') === 'true';
+
 
   useEffect(() => {
     if (user) {

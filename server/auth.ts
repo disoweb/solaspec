@@ -36,8 +36,10 @@ export class AuthService {
 
   static verifyToken(token: string): any {
     try {
-      return jwt.verify(token, JWT_SECRET);
+      const decoded = jwt.verify(token, JWT_SECRET);
+      return decoded;
     } catch (error) {
+      console.error("JWT verification error:", error.message);
       return null;
     }
   }
@@ -105,7 +107,12 @@ export class AuthService {
 // Middleware to authenticate requests
 export const authenticate = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const token = req.cookies["auth-token"] || req.headers.authorization?.replace("Bearer ", "");
+    let token = req.cookies["auth-token"];
+    
+    // If no cookie token, try authorization header
+    if (!token && req.headers.authorization) {
+      token = req.headers.authorization.replace("Bearer ", "");
+    }
 
     if (!token) {
       return res.status(401).json({ message: "No token provided" });
@@ -113,6 +120,7 @@ export const authenticate = async (req: AuthenticatedRequest, res: Response, nex
 
     const decoded = AuthService.verifyToken(token);
     if (!decoded) {
+      console.error("Token verification failed for token:", token.substring(0, 20) + "...");
       return res.status(401).json({ message: "Invalid token" });
     }
 
@@ -120,6 +128,7 @@ export const authenticate = async (req: AuthenticatedRequest, res: Response, nex
     const userId = decoded.id || decoded.userId;
     const user = await storage.getUser(userId);
     if (!user) {
+      console.error("User not found for decoded token:", decoded);
       return res.status(401).json({ message: "User not found or inactive" });
     }
 

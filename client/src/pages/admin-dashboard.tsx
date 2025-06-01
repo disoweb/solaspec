@@ -49,9 +49,19 @@ export default function AdminDashboard() {
               <p className="text-muted-foreground mb-4">
                 You need administrator privileges to access this dashboard.
               </p>
-              <Button asChild>
-                <a href="/">Go Home</a>
-              </Button>
+              {user && (
+                <p className="text-sm text-muted-foreground mb-4">
+                  Current user: {user.email} (Role: {user.role})
+                </p>
+              )}
+              <div className="space-x-2">
+                <Button asChild>
+                  <a href="/">Go Home</a>
+                </Button>
+                <Button variant="outline" asChild>
+                  <a href="/login?admin=true">Admin Login</a>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
