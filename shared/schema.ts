@@ -664,6 +664,306 @@ export const vendorBadgeAssignmentsRelations = relations(vendorBadgeAssignments,
   }),
 }));
 
+// Vendor verification documents
+export const vendorVerificationDocuments = pgTable("vendor_verification_documents", {
+  id: serial("id").primaryKey(),
+  vendorId: integer("vendor_id").notNull().references(() => vendors.id),
+  documentType: varchar("document_type", { 
+    enum: ["proof_of_address", "proof_of_identity", "company_license", "tax_document", "bank_statement", "other"] 
+  }).notNull(),
+  documentName: varchar("document_name").notNull(),
+  documentUrl: varchar("document_url").notNull(),
+  status: varchar("status", { enum: ["pending", "approved", "rejected"] }).default("pending").notNull(),
+  reviewedBy: integer("reviewed_by").references(() => users.id),
+  reviewNotes: text("review_notes"),
+  submittedAt: timestamp("submitted_at").defaultNow(),
+  reviewedAt: timestamp("reviewed_at"),
+  expiresAt: timestamp("expires_at"),
+});
+
+// Vendor verification requirements by group
+export const vendorVerificationRequirements = pgTable("vendor_verification_requirements", {
+  id: serial("id").primaryKey(),
+  groupId: integer("group_id").references(() => vendorGroups.id),
+  documentType: varchar("document_type").notNull(),
+  isRequired: boolean("is_required").default(true),
+  description: text("description"),
+  maxFileSize: integer("max_file_size").default(5242880), // 5MB
+  allowedFormats: text("allowed_formats").array(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Abuse reports
+export const abuseReports = pgTable("abuse_reports", {
+  id: serial("id").primaryKey(),
+  reporterId: integer("reporter_id").notNull().references(() => users.id),
+  reportType: varchar("report_type", { 
+    enum: ["product", "review", "vendor", "order", "other"] 
+  }).notNull(),
+  targetId: integer("target_id").notNull(), // ID of reported item
+  targetType: varchar("target_type").notNull(), // Type of reported item
+  category: varchar("category", { 
+    enum: ["fake_product", "inappropriate_content", "spam", "fraud", "copyright", "other"] 
+  }).notNull(),
+  description: text("description").notNull(),
+  evidence: jsonb("evidence"), // URLs to evidence files
+  status: varchar("status", { enum: ["pending", "under_review", "resolved", "dismissed"] }).default("pending").notNull(),
+  reviewedBy: integer("reviewed_by").references(() => users.id),
+  adminNotes: text("admin_notes"),
+  resolution: text("resolution"),
+  priority: varchar("priority", { enum: ["low", "medium", "high", "urgent"] }).default("medium").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Store policies
+export const vendorStorePolicies = pgTable("vendor_store_policies", {
+  id: serial("id").primaryKey(),
+  vendorId: integer("vendor_id").notNull().references(() => vendors.id),
+  policyType: varchar("policy_type", { 
+    enum: ["shipping", "returns", "privacy", "terms", "warranty", "payment", "custom"] 
+  }).notNull(),
+  title: varchar("title").notNull(),
+  content: text("content").notNull(),
+  isActive: boolean("is_active").default(true),
+  displayOrder: integer("display_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Store reviews (separate from product reviews)
+export const storeReviews = pgTable("store_reviews", {
+  id: serial("id").primaryKey(),
+  vendorId: integer("vendor_id").notNull().references(() => vendors.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  orderId: uuid("order_id").references(() => orders.id),
+  rating: integer("rating").notNull(),
+  title: varchar("title"),
+  comment: text("comment"),
+  serviceRating: integer("service_rating"), // Customer service rating
+  communicationRating: integer("communication_rating"),
+  deliveryRating: integer("delivery_rating"),
+  vendorReply: text("vendor_reply"),
+  vendorRepliedAt: timestamp("vendor_replied_at"),
+  isVerifiedPurchase: boolean("is_verified_purchase").default(false),
+  isReported: boolean("is_reported").default(false),
+  reportReason: text("report_reason"),
+  reportedAt: timestamp("reported_at"),
+  reportedBy: integer("reported_by").references(() => users.id),
+  isHidden: boolean("is_hidden").default(false),
+  helpfulVotes: integer("helpful_votes").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Review helpfulness votes
+export const reviewHelpfulVotes = pgTable("review_helpful_votes", {
+  id: serial("id").primaryKey(),
+  reviewId: integer("review_id").notNull().references(() => storeReviews.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  isHelpful: boolean("is_helpful").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Admin announcements
+export const adminAnnouncements = pgTable("admin_announcements", {
+  id: serial("id").primaryKey(),
+  title: varchar("title").notNull(),
+  content: text("content").notNull(),
+  type: varchar("type", { enum: ["info", "warning", "success", "urgent"] }).default("info").notNull(),
+  targetType: varchar("target_type", { 
+    enum: ["all_vendors", "vendor_group", "specific_vendors", "all_users"] 
+  }).notNull(),
+  targetGroups: text("target_groups").array(), // Group IDs for vendor_group type
+  targetVendors: text("target_vendors").array(), // Vendor IDs for specific_vendors type
+  sendEmail: boolean("send_email").default(false),
+  emailSubject: varchar("email_subject"),
+  emailTemplate: text("email_template"),
+  isActive: boolean("is_active").default(true),
+  scheduledAt: timestamp("scheduled_at"),
+  publishedAt: timestamp("published_at"),
+  expiresAt: timestamp("expires_at"),
+  createdBy: integer("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Announcement read status
+export const announcementReadStatus = pgTable("announcement_read_status", {
+  id: serial("id").primaryKey(),
+  announcementId: integer("announcement_id").notNull().references(() => adminAnnouncements.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  readAt: timestamp("read_at").defaultNow(),
+});
+
+// Store support tickets
+export const storeSupportTickets = pgTable("store_support_tickets", {
+  id: serial("id").primaryKey(),
+  ticketNumber: varchar("ticket_number").notNull().unique(),
+  vendorId: integer("vendor_id").notNull().references(() => vendors.id),
+  customerId: integer("customer_id").notNull().references(() => users.id),
+  orderId: uuid("order_id").references(() => orders.id),
+  subject: varchar("subject").notNull(),
+  description: text("description").notNull(),
+  category: varchar("category", { 
+    enum: ["general", "order_issue", "product_question", "shipping", "refund", "technical", "other"] 
+  }).notNull(),
+  priority: varchar("priority", { enum: ["low", "medium", "high", "urgent"] }).default("medium").notNull(),
+  status: varchar("status", { 
+    enum: ["open", "in_progress", "waiting_customer", "waiting_vendor", "resolved", "closed"] 
+  }).default("open").notNull(),
+  assignedTo: integer("assigned_to").references(() => users.id),
+  lastResponseBy: varchar("last_response_by", { enum: ["customer", "vendor", "admin"] }),
+  lastResponseAt: timestamp("last_response_at"),
+  resolvedAt: timestamp("resolved_at"),
+  closedAt: timestamp("closed_at"),
+  satisfactionRating: integer("satisfaction_rating"), // 1-5 rating after resolution
+  satisfactionComment: text("satisfaction_comment"),
+  internalNotes: text("internal_notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Support ticket messages
+export const supportTicketMessages = pgTable("support_ticket_messages", {
+  id: serial("id").primaryKey(),
+  ticketId: integer("ticket_id").notNull().references(() => storeSupportTickets.id),
+  senderId: integer("sender_id").notNull().references(() => users.id),
+  senderType: varchar("sender_type", { enum: ["customer", "vendor", "admin"] }).notNull(),
+  message: text("message").notNull(),
+  attachments: jsonb("attachments"),
+  isInternal: boolean("is_internal").default(false), // Internal notes visible only to vendor/admin
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Vendor email preferences
+export const vendorEmailPreferences = pgTable("vendor_email_preferences", {
+  id: serial("id").primaryKey(),
+  vendorId: integer("vendor_id").notNull().references(() => vendors.id),
+  newOrders: boolean("new_orders").default(true),
+  orderUpdates: boolean("order_updates").default(true),
+  newReviews: boolean("new_reviews").default(true),
+  supportTickets: boolean("support_tickets").default(true),
+  announcements: boolean("announcements").default(true),
+  payoutNotifications: boolean("payout_notifications").default(true),
+  inventoryAlerts: boolean("inventory_alerts").default(true),
+  marketingEmails: boolean("marketing_emails").default(false),
+  weeklyReports: boolean("weekly_reports").default(true),
+  accountSecurity: boolean("account_security").default(true),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Verification document logs
+export const verificationLogs = pgTable("verification_logs", {
+  id: serial("id").primaryKey(),
+  documentId: integer("document_id").notNull().references(() => vendorVerificationDocuments.id),
+  actionType: varchar("action_type", { 
+    enum: ["submitted", "approved", "rejected", "re_submitted", "expired"] 
+  }).notNull(),
+  performedBy: integer("performed_by").references(() => users.id),
+  notes: text("notes"),
+  oldStatus: varchar("old_status"),
+  newStatus: varchar("new_status"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Relations for new tables
+export const vendorVerificationDocumentsRelations = relations(vendorVerificationDocuments, ({ one, many }) => ({
+  vendor: one(vendors, {
+    fields: [vendorVerificationDocuments.vendorId],
+    references: [vendors.id],
+  }),
+  reviewer: one(users, {
+    fields: [vendorVerificationDocuments.reviewedBy],
+    references: [users.id],
+  }),
+  logs: many(verificationLogs),
+}));
+
+export const abuseReportsRelations = relations(abuseReports, ({ one }) => ({
+  reporter: one(users, {
+    fields: [abuseReports.reporterId],
+    references: [users.id],
+  }),
+  reviewer: one(users, {
+    fields: [abuseReports.reviewedBy],
+    references: [users.id],
+  }),
+}));
+
+export const vendorStorePoliciesRelations = relations(vendorStorePolicies, ({ one }) => ({
+  vendor: one(vendors, {
+    fields: [vendorStorePolicies.vendorId],
+    references: [vendors.id],
+  }),
+}));
+
+export const storeReviewsRelations = relations(storeReviews, ({ one, many }) => ({
+  vendor: one(vendors, {
+    fields: [storeReviews.vendorId],
+    references: [vendors.id],
+  }),
+  user: one(users, {
+    fields: [storeReviews.userId],
+    references: [users.id],
+  }),
+  order: one(orders, {
+    fields: [storeReviews.orderId],
+    references: [orders.id],
+  }),
+  reportedByUser: one(users, {
+    fields: [storeReviews.reportedBy],
+    references: [users.id],
+  }),
+  helpfulVotes: many(reviewHelpfulVotes),
+}));
+
+export const adminAnnouncementsRelations = relations(adminAnnouncements, ({ one, many }) => ({
+  creator: one(users, {
+    fields: [adminAnnouncements.createdBy],
+    references: [users.id],
+  }),
+  readStatus: many(announcementReadStatus),
+}));
+
+export const storeSupportTicketsRelations = relations(storeSupportTickets, ({ one, many }) => ({
+  vendor: one(vendors, {
+    fields: [storeSupportTickets.vendorId],
+    references: [vendors.id],
+  }),
+  customer: one(users, {
+    fields: [storeSupportTickets.customerId],
+    references: [users.id],
+  }),
+  order: one(orders, {
+    fields: [storeSupportTickets.orderId],
+    references: [orders.id],
+  }),
+  assignedUser: one(users, {
+    fields: [storeSupportTickets.assignedTo],
+    references: [users.id],
+  }),
+  messages: many(supportTicketMessages),
+}));
+
+export const supportTicketMessagesRelations = relations(supportTicketMessages, ({ one }) => ({
+  ticket: one(storeSupportTickets, {
+    fields: [supportTicketMessages.ticketId],
+    references: [storeSupportTickets.id],
+  }),
+  sender: one(users, {
+    fields: [supportTicketMessages.senderId],
+    references: [users.id],
+  }),
+}));
+
+export const vendorEmailPreferencesRelations = relations(vendorEmailPreferences, ({ one }) => ({
+  vendor: one(vendors, {
+    fields: [vendorEmailPreferences.vendorId],
+    references: [vendors.id],
+  }),
+}));
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertVendorSchema = createInsertSchema(vendors).omit({ id: true, createdAt: true });
@@ -690,6 +990,14 @@ export const insertVendorWithdrawalSchema = createInsertSchema(vendorWithdrawals
 export const insertVendorCouponSchema = createInsertSchema(vendorCoupons).omit({ id: true, createdAt: true });
 export const insertVendorBadgeSchema = createInsertSchema(vendorBadges).omit({ id: true, createdAt: true });
 export const insertVendorBadgeAssignmentSchema = createInsertSchema(vendorBadgeAssignments).omit({ id: true, awardedAt: true });
+export const insertVendorVerificationDocumentSchema = createInsertSchema(vendorVerificationDocuments).omit({ id: true, submittedAt: true });
+export const insertAbuseReportSchema = createInsertSchema(abuseReports).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertVendorStorePolicySchema = createInsertSchema(vendorStorePolicies).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertStoreReviewSchema = createInsertSchema(storeReviews).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertAdminAnnouncementSchema = createInsertSchema(adminAnnouncements).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertStoreSupportTicketSchema = createInsertSchema(storeSupportTickets).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertSupportTicketMessageSchema = createInsertSchema(supportTicketMessages).omit({ id: true, createdAt: true });
+export const insertVendorEmailPreferencesSchema = createInsertSchema(vendorEmailPreferences).omit({ id: true, updatedAt: true });
 
 // Types
 export type User = typeof users.$inferSelect;
@@ -767,3 +1075,27 @@ export type InsertVendorBadge = z.infer<typeof insertVendorBadgeSchema>;
 
 export type VendorBadgeAssignment = typeof vendorBadgeAssignments.$inferSelect;
 export type InsertVendorBadgeAssignment = z.infer<typeof insertVendorBadgeAssignmentSchema>;
+
+export type VendorVerificationDocument = typeof vendorVerificationDocuments.$inferSelect;
+export type InsertVendorVerificationDocument = z.infer<typeof insertVendorVerificationDocumentSchema>;
+
+export type AbuseReport = typeof abuseReports.$inferSelect;
+export type InsertAbuseReport = z.infer<typeof insertAbuseReportSchema>;
+
+export type VendorStorePolicy = typeof vendorStorePolicies.$inferSelect;
+export type InsertVendorStorePolicy = z.infer<typeof insertVendorStorePolicySchema>;
+
+export type StoreReview = typeof storeReviews.$inferSelect;
+export type InsertStoreReview = z.infer<typeof insertStoreReviewSchema>;
+
+export type AdminAnnouncement = typeof adminAnnouncements.$inferSelect;
+export type InsertAdminAnnouncement = z.infer<typeof insertAdminAnnouncementSchema>;
+
+export type StoreSupportTicket = typeof storeSupportTickets.$inferSelect;
+export type InsertStoreSupportTicket = z.infer<typeof insertStoreSupportTicketSchema>;
+
+export type SupportTicketMessage = typeof supportTicketMessages.$inferSelect;
+export type InsertSupportTicketMessage = z.infer<typeof insertSupportTicketMessageSchema>;
+
+export type VendorEmailPreferences = typeof vendorEmailPreferences.$inferSelect;
+export type InsertVendorEmailPreferences = z.infer<typeof insertVendorEmailPreferencesSchema>;

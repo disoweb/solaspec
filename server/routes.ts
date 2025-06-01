@@ -1184,6 +1184,458 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Vendor verification routes
+  app.get('/api/vendor/verification/documents', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const vendor = await storage.getVendorByUserId(userId);
+      
+      if (!vendor) {
+        return res.status(404).json({ message: "Vendor profile not found" });
+      }
+
+      const documents = await storage.getVendorVerificationDocuments(vendor.id);
+      res.json(documents);
+    } catch (error) {
+      console.error("Error fetching verification documents:", error);
+      res.status(500).json({ message: "Failed to fetch verification documents" });
+    }
+  });
+
+  app.get('/api/vendor/verification/requirements', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const vendor = await storage.getVendorByUserId(userId);
+      
+      if (!vendor) {
+        return res.status(404).json({ message: "Vendor profile not found" });
+      }
+
+      // Get group ID for vendor (you may need to implement this)
+      const requirements = await storage.getVerificationRequirements();
+      res.json(requirements);
+    } catch (error) {
+      console.error("Error fetching verification requirements:", error);
+      res.status(500).json({ message: "Failed to fetch verification requirements" });
+    }
+  });
+
+  app.post('/api/vendor/verification/upload', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const vendor = await storage.getVendorByUserId(userId);
+      
+      if (!vendor) {
+        return res.status(404).json({ message: "Vendor profile not found" });
+      }
+
+      // In a real implementation, you'd handle file upload here
+      // For now, we'll mock the document creation
+      const documentData = {
+        vendorId: vendor.id,
+        documentType: req.body.documentType,
+        documentName: req.body.documentName,
+        documentUrl: `/uploads/verification/${Date.now()}-${req.body.documentName}`,
+        status: 'pending'
+      };
+
+      const document = await storage.createVerificationDocument(documentData);
+      res.status(201).json(document);
+    } catch (error) {
+      console.error("Error uploading verification document:", error);
+      res.status(500).json({ message: "Failed to upload verification document" });
+    }
+  });
+
+  // Admin verification management
+  app.get('/api/admin/verification/documents', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const user = await storage.getUser(req.user!.id);
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      // Get all pending verification documents
+      const documents = await storage.getVendorVerificationDocuments(0); // 0 for all vendors
+      res.json(documents);
+    } catch (error) {
+      console.error("Error fetching verification documents:", error);
+      res.status(500).json({ message: "Failed to fetch verification documents" });
+    }
+  });
+
+  app.put('/api/admin/verification/documents/:id', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const user = await storage.getUser(req.user!.id);
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const documentId = parseInt(req.params.id);
+      const updateData = {
+        ...req.body,
+        reviewedBy: req.user!.id
+      };
+
+      const document = await storage.updateVerificationDocument(documentId, updateData);
+      res.json(document);
+    } catch (error) {
+      console.error("Error updating verification document:", error);
+      res.status(500).json({ message: "Failed to update verification document" });
+    }
+  });
+
+  // Abuse report routes
+  app.post('/api/abuse-reports', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const reportData = {
+        ...req.body,
+        reporterId: req.user!.id
+      };
+
+      const report = await storage.createAbuseReport(reportData);
+      res.status(201).json(report);
+    } catch (error) {
+      console.error("Error creating abuse report:", error);
+      res.status(500).json({ message: "Failed to create abuse report" });
+    }
+  });
+
+  app.get('/api/admin/abuse-reports', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const user = await storage.getUser(req.user!.id);
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const { status, reportType, priority } = req.query;
+      const filters = {
+        status: status as string,
+        reportType: reportType as string,
+        priority: priority as string
+      };
+
+      const reports = await storage.getAbuseReports(filters);
+      res.json(reports);
+    } catch (error) {
+      console.error("Error fetching abuse reports:", error);
+      res.status(500).json({ message: "Failed to fetch abuse reports" });
+    }
+  });
+
+  app.put('/api/admin/abuse-reports/:id', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const user = await storage.getUser(req.user!.id);
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const reportId = parseInt(req.params.id);
+      const report = await storage.updateAbuseReport(reportId, req.body);
+      res.json(report);
+    } catch (error) {
+      console.error("Error updating abuse report:", error);
+      res.status(500).json({ message: "Failed to update abuse report" });
+    }
+  });
+
+  // Store policy routes
+  app.get('/api/vendor/policies', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const vendor = await storage.getVendorByUserId(userId);
+      
+      if (!vendor) {
+        return res.status(404).json({ message: "Vendor profile not found" });
+      }
+
+      const policies = await storage.getStorePolicies(vendor.id);
+      res.json(policies);
+    } catch (error) {
+      console.error("Error fetching store policies:", error);
+      res.status(500).json({ message: "Failed to fetch store policies" });
+    }
+  });
+
+  app.post('/api/vendor/policies', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const vendor = await storage.getVendorByUserId(userId);
+      
+      if (!vendor) {
+        return res.status(404).json({ message: "Vendor profile not found" });
+      }
+
+      const policyData = {
+        ...req.body,
+        vendorId: vendor.id
+      };
+
+      const policy = await storage.createStorePolicy(policyData);
+      res.status(201).json(policy);
+    } catch (error) {
+      console.error("Error creating store policy:", error);
+      res.status(500).json({ message: "Failed to create store policy" });
+    }
+  });
+
+  app.put('/api/vendor/policies/:id', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const policyId = parseInt(req.params.id);
+      const policy = await storage.updateStorePolicy(policyId, req.body);
+      res.json(policy);
+    } catch (error) {
+      console.error("Error updating store policy:", error);
+      res.status(500).json({ message: "Failed to update store policy" });
+    }
+  });
+
+  app.delete('/api/vendor/policies/:id', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const policyId = parseInt(req.params.id);
+      await storage.deleteStorePolicy(policyId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting store policy:", error);
+      res.status(500).json({ message: "Failed to delete store policy" });
+    }
+  });
+
+  // Store review routes
+  app.get('/api/vendors/:vendorId/reviews', async (req, res) => {
+    try {
+      const vendorId = parseInt(req.params.vendorId);
+      const reviews = await storage.getStoreReviews(vendorId, { hideReported: true });
+      res.json(reviews);
+    } catch (error) {
+      console.error("Error fetching store reviews:", error);
+      res.status(500).json({ message: "Failed to fetch store reviews" });
+    }
+  });
+
+  app.post('/api/vendors/:vendorId/reviews', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const vendorId = parseInt(req.params.vendorId);
+      const reviewData = {
+        ...req.body,
+        vendorId,
+        userId: req.user!.id
+      };
+
+      const review = await storage.createStoreReview(reviewData);
+      res.status(201).json(review);
+    } catch (error) {
+      console.error("Error creating store review:", error);
+      res.status(500).json({ message: "Failed to create store review" });
+    }
+  });
+
+  app.post('/api/store-reviews/:id/report', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const reviewId = parseInt(req.params.id);
+      const reportData = {
+        ...req.body,
+        reportedBy: req.user!.id
+      };
+
+      const review = await storage.reportStoreReview(reviewId, reportData);
+      res.json(review);
+    } catch (error) {
+      console.error("Error reporting store review:", error);
+      res.status(500).json({ message: "Failed to report store review" });
+    }
+  });
+
+  app.post('/api/store-reviews/:id/reply', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const reviewId = parseInt(req.params.id);
+      const { reply } = req.body;
+
+      const review = await storage.addVendorReply(reviewId, reply);
+      res.json(review);
+    } catch (error) {
+      console.error("Error adding vendor reply:", error);
+      res.status(500).json({ message: "Failed to add vendor reply" });
+    }
+  });
+
+  app.post('/api/store-reviews/:id/helpful', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const reviewId = parseInt(req.params.id);
+      const { isHelpful } = req.body;
+
+      const count = await storage.voteReviewHelpful(reviewId, req.user!.id, isHelpful);
+      res.json({ helpfulVotes: count });
+    } catch (error) {
+      console.error("Error voting review helpful:", error);
+      res.status(500).json({ message: "Failed to vote review helpful" });
+    }
+  });
+
+  // Admin announcement routes
+  app.get('/api/announcements', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const announcements = await storage.getAnnouncements(req.user!.id, req.user!.role);
+      res.json(announcements);
+    } catch (error) {
+      console.error("Error fetching announcements:", error);
+      res.status(500).json({ message: "Failed to fetch announcements" });
+    }
+  });
+
+  app.post('/api/admin/announcements', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const user = await storage.getUser(req.user!.id);
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const announcementData = {
+        ...req.body,
+        createdBy: req.user!.id
+      };
+
+      const announcement = await storage.createAnnouncement(announcementData);
+      res.status(201).json(announcement);
+    } catch (error) {
+      console.error("Error creating announcement:", error);
+      res.status(500).json({ message: "Failed to create announcement" });
+    }
+  });
+
+  app.post('/api/announcements/:id/read', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const announcementId = parseInt(req.params.id);
+      await storage.markAnnouncementRead(announcementId, req.user!.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error marking announcement as read:", error);
+      res.status(500).json({ message: "Failed to mark announcement as read" });
+    }
+  });
+
+  // Support ticket routes
+  app.get('/api/support/tickets', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const user = await storage.getUser(userId);
+      
+      let filters: any = {};
+      
+      if (user?.role === 'vendor') {
+        const vendor = await storage.getVendorByUserId(userId);
+        if (vendor) {
+          filters.vendorId = vendor.id;
+        }
+      } else if (user?.role !== 'admin') {
+        filters.customerId = userId;
+      }
+
+      const tickets = await storage.getSupportTickets(filters);
+      res.json(tickets);
+    } catch (error) {
+      console.error("Error fetching support tickets:", error);
+      res.status(500).json({ message: "Failed to fetch support tickets" });
+    }
+  });
+
+  app.post('/api/support/tickets', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const ticketData = {
+        ...req.body,
+        customerId: req.user!.id
+      };
+
+      const ticket = await storage.createSupportTicket(ticketData);
+      res.status(201).json(ticket);
+    } catch (error) {
+      console.error("Error creating support ticket:", error);
+      res.status(500).json({ message: "Failed to create support ticket" });
+    }
+  });
+
+  app.get('/api/support/tickets/:id', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const ticketId = parseInt(req.params.id);
+      const ticket = await storage.getSupportTicket(ticketId);
+      
+      if (!ticket) {
+        return res.status(404).json({ message: "Ticket not found" });
+      }
+
+      res.json(ticket);
+    } catch (error) {
+      console.error("Error fetching support ticket:", error);
+      res.status(500).json({ message: "Failed to fetch support ticket" });
+    }
+  });
+
+  app.post('/api/support/tickets/:id/messages', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const ticketId = parseInt(req.params.id);
+      const messageData = {
+        ticketId,
+        senderId: req.user!.id,
+        senderType: req.user!.role === 'admin' ? 'admin' : req.user!.role === 'vendor' ? 'vendor' : 'customer',
+        message: req.body.message,
+        attachments: req.body.attachments,
+        isInternal: req.body.isInternal || false
+      };
+
+      const message = await storage.addSupportMessage(messageData);
+      res.status(201).json(message);
+    } catch (error) {
+      console.error("Error adding support message:", error);
+      res.status(500).json({ message: "Failed to add support message" });
+    }
+  });
+
+  app.get('/api/support/tickets/:id/messages', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const ticketId = parseInt(req.params.id);
+      const messages = await storage.getSupportMessages(ticketId);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching support messages:", error);
+      res.status(500).json({ message: "Failed to fetch support messages" });
+    }
+  });
+
+  // Email preferences routes
+  app.get('/api/vendor/email-preferences', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const vendor = await storage.getVendorByUserId(userId);
+      
+      if (!vendor) {
+        return res.status(404).json({ message: "Vendor profile not found" });
+      }
+
+      const preferences = await storage.getVendorEmailPreferences(vendor.id);
+      res.json(preferences);
+    } catch (error) {
+      console.error("Error fetching email preferences:", error);
+      res.status(500).json({ message: "Failed to fetch email preferences" });
+    }
+  });
+
+  app.put('/api/vendor/email-preferences', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const vendor = await storage.getVendorByUserId(userId);
+      
+      if (!vendor) {
+        return res.status(404).json({ message: "Vendor profile not found" });
+      }
+
+      const preferences = await storage.updateVendorEmailPreferences(vendor.id, req.body);
+      res.json(preferences);
+    } catch (error) {
+      console.error("Error updating email preferences:", error);
+      res.status(500).json({ message: "Failed to update email preferences" });
+    }
+  });
+
   // Vendor registration and approval routes
   app.post('/api/vendors/register', async (req, res) => {
     try {

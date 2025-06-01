@@ -19,6 +19,7 @@ import ProductImportExport from "@/components/vendor/product-import-export";
 import RefundManagement from "@/components/vendor/refund-management";
 import StaffManagement from "@/components/vendor/staff-management";
 import PayoutManagement from "@/components/vendor/payout-management";
+import VendorVerification from "@/components/vendor/vendor-verification";
 import { 
   Package, 
   TrendingUp, 
@@ -45,7 +46,11 @@ import {
   RotateCcw,
   Award,
   UserPlus,
-  Ticket
+  Ticket,
+  MessageCircle,
+  FileCheck,
+  ScrollText,
+  Star as StarIcon
 } from "lucide-react";
 
 export default function VendorDashboard() {
@@ -113,6 +118,7 @@ export default function VendorDashboard() {
 
   const tabs = [
     { id: "overview", label: "Overview", icon: BarChart3 },
+    { id: "verification", label: "Verification", icon: FileCheck },
     { id: "products", label: "Products", icon: Package },
     { id: "import-export", label: "Import/Export", icon: Import },
     { id: "inventory", label: "Inventory", icon: Package },
@@ -122,6 +128,9 @@ export default function VendorDashboard() {
     { id: "payouts", label: "Payouts", icon: DollarSign },
     { id: "coupons", label: "Coupons", icon: Ticket },
     { id: "staff", label: "Team & Staff", icon: UserPlus },
+    { id: "policies", label: "Store Policies", icon: ScrollText },
+    { id: "reviews", label: "Store Reviews", icon: StarIcon },
+    { id: "support", label: "Support", icon: MessageCircle },
     { id: "badges", label: "Badges", icon: Award },
     { id: "analytics", label: "Analytics", icon: TrendingUp },
     { id: "settings", label: "Settings", icon: Settings },
@@ -253,6 +262,10 @@ export default function VendorDashboard() {
             )}
           </TabsContent>
 
+          <TabsContent value="verification" className="space-y-6">
+            <VendorVerification />
+          </TabsContent>
+
           <TabsContent value="products" className="space-y-6">
             <ProductsTab vendor={vendor} />
           </TabsContent>
@@ -287,6 +300,18 @@ export default function VendorDashboard() {
 
           <TabsContent value="staff" className="space-y-6">
             <StaffManagement />
+          </TabsContent>
+
+          <TabsContent value="policies" className="space-y-6">
+            <StorePoliciesTab vendor={vendor} />
+          </TabsContent>
+
+          <TabsContent value="reviews" className="space-y-6">
+            <StoreReviewsTab vendor={vendor} />
+          </TabsContent>
+
+          <TabsContent value="support" className="space-y-6">
+            <SupportTicketsTab vendor={vendor} />
           </TabsContent>
 
           <TabsContent value="badges" className="space-y-6">
@@ -887,6 +912,332 @@ function BadgesTab({ vendor }: { vendor: any }) {
               <p className="text-sm text-gray-500 mt-2">
                 Keep selling and providing great service to earn badges!
               </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Store Policies Tab Component
+function StorePoliciesTab({ vendor }: { vendor: any }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [editingPolicy, setEditingPolicy] = useState<any>(null);
+
+  const { data: policies } = useQuery({
+    queryKey: ["/api/vendor/policies"],
+  });
+
+  const createPolicyMutation = useMutation({
+    mutationFn: async (data: any) => {
+      await apiRequest("POST", "/api/vendor/policies", data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Policy Created",
+        description: "Store policy has been created successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/vendor/policies"] });
+      setShowCreateDialog(false);
+    },
+  });
+
+  const policyTypes = [
+    { value: 'shipping', label: 'Shipping Policy' },
+    { value: 'returns', label: 'Returns & Refunds' },
+    { value: 'privacy', label: 'Privacy Policy' },
+    { value: 'terms', label: 'Terms of Service' },
+    { value: 'warranty', label: 'Warranty Policy' },
+    { value: 'payment', label: 'Payment Terms' },
+    { value: 'custom', label: 'Custom Policy' },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Store Policies</h2>
+        <Button onClick={() => setShowCreateDialog(true)}>
+          <Plus className="w-4 h-4 mr-2" />
+          Add Policy
+        </Button>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Your Store Policies</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {policies && policies.length > 0 ? (
+            <div className="space-y-4">
+              {policies.map((policy: any) => (
+                <div key={policy.id} className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-semibold">{policy.title}</h4>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline">
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button size="sm" variant="outline" className="text-red-600">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="mb-2">
+                    {policyTypes.find(t => t.value === policy.policyType)?.label}
+                  </Badge>
+                  <p className="text-sm text-gray-600 line-clamp-3">{policy.content}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <ScrollText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600 mb-4">No store policies created yet</p>
+              <Button onClick={() => setShowCreateDialog(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Create Your First Policy
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Store Reviews Tab Component
+function StoreReviewsTab({ vendor }: { vendor: any }) {
+  const { data: reviews } = useQuery({
+    queryKey: ["/api/vendors", vendor?.id, "reviews"],
+    enabled: !!vendor?.id,
+  });
+
+  return (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold">Store Reviews</h2>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3">
+              <StarIcon className="w-8 h-8 text-yellow-600" />
+              <div>
+                <p className="text-sm text-gray-600">Average Rating</p>
+                <p className="text-2xl font-bold">4.8</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3">
+              <MessageSquare className="w-8 h-8 text-blue-600" />
+              <div>
+                <p className="text-sm text-gray-600">Total Reviews</p>
+                <p className="text-2xl font-bold">{reviews?.length || 0}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3">
+              <TrendingUp className="w-8 h-8 text-green-600" />
+              <div>
+                <p className="text-sm text-gray-600">This Month</p>
+                <p className="text-2xl font-bold">
+                  {reviews?.filter((r: any) => 
+                    new Date(r.createdAt).getMonth() === new Date().getMonth()
+                  ).length || 0}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Reviews</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {reviews && reviews.length > 0 ? (
+            <div className="space-y-4">
+              {reviews.slice(0, 10).map((review: any) => (
+                <div key={review.id} className="border-b pb-4 last:border-b-0">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{review.customerName}</span>
+                      <div className="flex items-center">
+                        {[...Array(5)].map((_, i) => (
+                          <StarIcon 
+                            key={i} 
+                            className={`w-4 h-4 ${i < review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} 
+                          />
+                        ))}
+                      </div>
+                      {review.isVerifiedPurchase && (
+                        <Badge variant="outline" className="text-xs">Verified Purchase</Badge>
+                      )}
+                    </div>
+                    <span className="text-xs text-gray-500">
+                      {new Date(review.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                  
+                  {review.title && (
+                    <h4 className="font-medium mb-1">{review.title}</h4>
+                  )}
+                  
+                  <p className="text-sm text-gray-600 mb-2">{review.comment}</p>
+                  
+                  {review.vendorReply && (
+                    <div className="bg-gray-50 p-3 rounded-lg mt-2">
+                      <p className="text-xs text-gray-500 mb-1">Vendor Response:</p>
+                      <p className="text-sm">{review.vendorReply}</p>
+                    </div>
+                  )}
+                  
+                  {!review.vendorReply && (
+                    <Button size="sm" variant="outline">
+                      Reply to Review
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <StarIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600">No reviews yet</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Support Tickets Tab Component
+function SupportTicketsTab({ vendor }: { vendor: any }) {
+  const { data: tickets } = useQuery({
+    queryKey: ["/api/support/tickets"],
+  });
+
+  const getStatusBadge = (status: string) => {
+    const variants: any = {
+      open: "destructive",
+      in_progress: "default",
+      waiting_customer: "secondary",
+      waiting_vendor: "secondary",
+      resolved: "outline",
+      closed: "outline"
+    };
+    return <Badge variant={variants[status] || "secondary"}>{status.replace('_', ' ')}</Badge>;
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Support Tickets</h2>
+        <Button>
+          <Plus className="w-4 h-4 mr-2" />
+          New Ticket
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3">
+              <MessageCircle className="w-8 h-8 text-red-600" />
+              <div>
+                <p className="text-sm text-gray-600">Open</p>
+                <p className="text-2xl font-bold">
+                  {tickets?.filter((t: any) => t.status === 'open').length || 0}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3">
+              <Clock className="w-8 h-8 text-yellow-600" />
+              <div>
+                <p className="text-sm text-gray-600">In Progress</p>
+                <p className="text-2xl font-bold">
+                  {tickets?.filter((t: any) => t.status === 'in_progress').length || 0}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="w-8 h-8 text-green-600" />
+              <div>
+                <p className="text-sm text-gray-600">Resolved</p>
+                <p className="text-2xl font-bold">
+                  {tickets?.filter((t: any) => t.status === 'resolved').length || 0}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3">
+              <XCircle className="w-8 h-8 text-gray-600" />
+              <div>
+                <p className="text-sm text-gray-600">Closed</p>
+                <p className="text-2xl font-bold">
+                  {tickets?.filter((t: any) => t.status === 'closed').length || 0}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Tickets</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {tickets && tickets.length > 0 ? (
+            <div className="space-y-4">
+              {tickets.slice(0, 10).map((ticket: any) => (
+                <div key={ticket.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <h4 className="font-semibold">{ticket.subject}</h4>
+                    <p className="text-sm text-gray-600">#{ticket.ticketNumber}</p>
+                    <p className="text-xs text-gray-500">
+                      From: {ticket.customerName} • {new Date(ticket.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {getStatusBadge(ticket.status)}
+                    <Button size="sm" variant="outline">
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <MessageCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600">No support tickets yet</p>
             </div>
           )}
         </CardContent>
