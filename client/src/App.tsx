@@ -18,6 +18,7 @@ import AdminDashboard from "./pages/admin-dashboard";
 import Installers from "./pages/installers";
 import Checkout from "./pages/checkout";
 import OrderConfirmation from "./pages/order-confirmation";
+import BecomeVendor from "./pages/become-vendor";
 import NotFound from "./pages/not-found";
 import "./index.css";
 import InstallerDashboard from "./pages/installer-dashboard";
@@ -43,6 +44,7 @@ function App() {
               <Route path="/admin-dashboard" component={AdminDashboard} />
               <Route path="/vendor-dashboard" component={VendorDashboard} />
               <Route path="/installer-dashboard" component={InstallerDashboard} />
+              <Route path="/become-vendor" component={BecomeVendor} />
               <Route component={NotFound} />
             </Switch>
             <Toaster />

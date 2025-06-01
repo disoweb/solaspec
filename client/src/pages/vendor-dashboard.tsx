@@ -15,6 +15,7 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import VendorStats from "@/components/dashboard/vendor-stats";
+import ProductImportExport from "@/components/vendor/product-import-export";
 import { 
   Package, 
   TrendingUp, 
@@ -36,7 +37,8 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  RefreshCw
+  RefreshCw,
+  Import
 } from "lucide-react";
 
 export default function VendorDashboard() {
@@ -105,6 +107,7 @@ export default function VendorDashboard() {
   const tabs = [
     { id: "overview", label: "Overview", icon: BarChart3 },
     { id: "products", label: "Products", icon: Package },
+    { id: "import-export", label: "Import/Export", icon: Import },
     { id: "inventory", label: "Inventory", icon: Package },
     { id: "orders", label: "Orders", icon: FileText },
     { id: "escrow", label: "Escrow & Payments", icon: Shield },
@@ -127,7 +130,7 @@ export default function VendorDashboard() {
 
         {/* Navigation Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-8">
             {tabs.map((tab) => (
               <TabsTrigger key={tab.id} value={tab.id} className="flex items-center space-x-2">
                 <tab.icon className="w-4 h-4" />
@@ -238,6 +241,10 @@ export default function VendorDashboard() {
 
           <TabsContent value="products" className="space-y-6">
             <ProductsTab vendor={vendor} />
+          </TabsContent>
+
+          <TabsContent value="import-export" className="space-y-6">
+            <ProductImportExport vendor={vendor} />
           </TabsContent>
 
           <TabsContent value="inventory" className="space-y-6">

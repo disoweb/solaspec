@@ -132,6 +132,19 @@ export interface IStorage {
     updateMilestone(milestoneId: number, data: Partial<any>): Promise<any>;
     createMilestonePayment(data: any): Promise<any>;
     releaseMilestonePayment(paymentId: number): Promise<any>;
+
+  // Inventory alerts for low stock notifications
+  createInventoryAlert(alertData: any): Promise<any>;
+  markInventoryAlertRead(alertId: number): Promise<void>;
+
+  // Vendor applications
+  createVendorApplication(applicationData: any): Promise<any>;
+  getPendingVendorApplications(): Promise<any[]>;
+  approveVendorApplication(applicationId: string): Promise<void>;
+  rejectVendorApplication(applicationId: string, reason: string): Promise<void>;
+
+  // Product operations by vendor
+  // Product operations
 }
 
 export class DatabaseStorage implements IStorage {
@@ -256,14 +269,6 @@ export class DatabaseStorage implements IStorage {
     }
 
     return await query.orderBy(desc(products.featured), desc(products.createdAt));
-  }
-
-  async getProductsByVendor(vendorId: number): Promise<Product[]> {
-    return await db
-      .select()
-      .from(products)
-      .where(eq(products.vendorId, vendorId))
-      .orderBy(desc(products.createdAt));
   }
 
   async updateProduct(id: number, updates: Partial<InsertProduct>): Promise<Product> {
@@ -664,6 +669,73 @@ export class DatabaseStorage implements IStorage {
       .where(eq(milestonePayments.id, paymentId))
       .returning();
     return payment;
+  }
+
+  // Inventory alerts for low stock notifications
+  async getInventoryAlerts(vendorId: number): Promise<any[]> {
+    return await db.select()
+      .from(inventoryAlerts)
+      .where(eq(inventoryAlerts.vendorId, vendorId))
+      .orderBy(desc(inventoryAlerts.createdAt));
+  }
+
+  async createInventoryAlert(alertData: any): Promise<any> {
+    const [alert] = await db.insert(inventoryAlerts).values(alertData).returning();
+    return alert;
+  }
+
+  async markInventoryAlertRead(alertId: number): Promise<void> {
+    await db.update(inventoryAlerts)
+      .set({ isRead: true })
+      .where(eq(inventoryAlerts.id, alertId));
+  }
+
+  // Vendor applications
+  async createVendorApplication(applicationData: any): Promise<any> {
+    // Create a pending vendor application record
+    const application = {
+      ...applicationData,
+      status: 'pending',
+      createdAt: new Date(),
+    };
+
+    // This would insert into a vendor_applications table
+    // For now, return mock data
+    return { id: Math.random().toString(36).substr(2, 9), ...application };
+  }
+
+  async getPendingVendorApplications(): Promise<any[]> {
+    // This would query pending vendor applications
+    // Return mock data for now
+    return [
+      {
+        id: 1,
+        companyName: 'New Solar Co',
+        email: 'contact@newsolar.com',
+        status: 'pending',
+        createdAt: new Date(),
+        customFields: {
+          business_type: 'Solar Installer',
+          years_in_business: 5,
+          certifications: ['NABCEP Certified', 'State Licensed']
+        }
+      }
+    ];
+  }
+
+  async approveVendorApplication(applicationId: string): Promise<void> {
+    // This would approve the vendor application and create vendor record
+    console.log(`Approving vendor application ${applicationId}`);
+  }
+
+  async rejectVendorApplication(applicationId: string, reason: string): Promise<void> {
+    // This would reject the vendor application
+    console.log(`Rejecting vendor application ${applicationId}: ${reason}`);
+  }
+
+  // Product operations by vendor
+  async getProductsByVendor(vendorId: number): Promise<Product[]> {
+    return await db.select().from(products).where(eq(products.vendorId, vendorId));
   }
 }
 

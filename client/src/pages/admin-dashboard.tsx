@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -16,6 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
+import AdminOverview from "@/components/dashboard/admin-overview";
+import MarketplaceReports from "@/components/admin/marketplace-reports";
 import { 
   Shield, 
   Users, 
@@ -46,7 +47,8 @@ import {
   Clock,
   Award,
   Flag,
-  Zap
+  Zap,
+  PieChart
 } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -165,7 +167,7 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <div className="max-w-7xl mx-auto container-mobile py-8">
         {/* Header */}
         <div className="mb-8">
@@ -503,7 +505,7 @@ export default function AdminDashboard() {
                     </div>
                     <Switch defaultChecked />
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <Label>Auto-approve Vendors</Label>
@@ -511,7 +513,7 @@ export default function AdminDashboard() {
                     </div>
                     <Switch />
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <Label>Commission Rate (%)</Label>
@@ -534,7 +536,7 @@ export default function AdminDashboard() {
                     </div>
                     <Switch defaultChecked />
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <Label>Auto-release Days</Label>
@@ -542,7 +544,7 @@ export default function AdminDashboard() {
                     </div>
                     <Input type="number" defaultValue="7" className="w-20" />
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <Label>Minimum Order Amount</Label>
@@ -564,17 +566,17 @@ export default function AdminDashboard() {
                     <Label>New Order Notifications</Label>
                     <Switch defaultChecked />
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <Label>Vendor Application Alerts</Label>
                     <Switch defaultChecked />
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <Label>Payment Notifications</Label>
                     <Switch defaultChecked />
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <Label>System Alerts</Label>
                     <Switch defaultChecked />
@@ -607,14 +609,14 @@ export default function AdminDashboard() {
                   <p className="text-sm text-muted-foreground">Open Tickets</p>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardContent className="p-4 text-center">
                   <div className="text-2xl font-bold text-yellow-600">{supportTickets?.filter((t: any) => t.status === 'pending').length || 0}</div>
                   <p className="text-sm text-muted-foreground">Pending Response</p>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardContent className="p-4 text-center">
                   <div className="text-2xl font-bold text-green-600">{supportTickets?.filter((t: any) => t.status === 'resolved').length || 0}</div>
@@ -655,76 +657,7 @@ export default function AdminDashboard() {
 
           {/* Reports Tab */}
           <TabsContent value="reports" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold">Analytics & Reports</h2>
-              <div className="flex gap-2">
-                <Button variant="outline">
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Date Range
-                </Button>
-                <Button variant="outline">
-                  <Download className="w-4 h-4 mr-2" />
-                  Export
-                </Button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Sales Growth</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-green-600">+{stats.monthlyGrowth}%</div>
-                  <Progress value={stats.monthlyGrowth} className="mt-2" />
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Conversion Rate</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">3.2%</div>
-                  <Progress value={32} className="mt-2" />
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Avg Order Value</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">${(stats.totalRevenue / Math.max(stats.totalOrders, 1)).toLocaleString()}</div>
-                  <p className="text-xs text-muted-foreground mt-1">Per order</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Customer Satisfaction</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">4.8/5</div>
-                  <div className="flex mt-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Revenue Trends</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-64 flex items-center justify-center text-muted-foreground">
-                  Chart visualization would go here
-                </div>
-              </CardContent>
-            </Card>
+            <MarketplaceReports />
           </TabsContent>
         </Tabs>
       </div>

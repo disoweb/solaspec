@@ -546,6 +546,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Product import/export routes
+  app.get('/api/products/export', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const user = await storage.getUser(userId);
+
+      if (user?.role !== 'vendor') {
+        return res.status(403).json({ message: "Only vendors can export products" });
+      }
+
+      const vendor = await storage.getVendorByUserId(userId);
+      if (!vendor) {
+        return res.status(404).json({ message: "Vendor profile not found" });
+      }
+
+      const products = await storage.getProductsByVendor(vendor.id);
+      
+      // Convert to CSV format
+      const csvHeader = "name,description,price,capacity,type,warranty,efficiency,stockQuantity,minimumOrderQuantity,weight,dimensions,sku,locations\n";
+      const csvRows = products.map(product => {
+        const dimensions = product.dimensions ? JSON.stringify(product.dimensions) : '{}';
+        const locations = Array.isArray(product.locations) ? product.locations.join(';') : '';
+        
+        return [
+          `"${product.name || ''}"`,
+          `"${product.description || ''}"`,
+          product.price || '0',
+          `"${product.capacity || ''}"`,
+          `"${product.type || ''}"`,
+          `"${product.warranty || ''}"`,
+          product.efficiency || '0',
+          product.stockQuantity || '0',
+          product.minimumOrderQuantity || '1',
+          product.weight || '0',
+          `"${dimensions}"`,
+          `"${product.sku || ''}"`,
+          `"${locations}"`
+        ].join(',');
+      }).join('\n');
+
+      const csvContent = csvHeader + csvRows;
+      
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="products.csv"');
+      res.send(csvContent);
+    } catch (error) {
+      console.error("Error exporting products:", error);
+      res.status(500).json({ message: "Failed to export products" });
+    }
+  });
+
+  app.post('/api/products/import', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const user = await storage.getUser(userId);
+
+      if (user?.role !== 'vendor') {
+        return res.status(403).json({ message: "Only vendors can import products" });
+      }
+
+      const vendor = await storage.getVendorByUserId(userId);
+      if (!vendor) {
+        return res.status(404).json({ message: "Vendor profile not found" });
+      }
+
+      // This would handle file upload and CSV parsing
+      // For now, return a mock response
+      const mockResult = {
+        success: 15,
+        failed: 2,
+        errors: [
+          "Row 3: Invalid price format",
+          "Row 7: Missing required field 'name'"
+        ]
+      };
+
+      res.json(mockResult);
+    } catch (error) {
+      console.error("Error importing products:", error);
+      res.status(500).json({ message: "Failed to import products" });
+    }
+  });
+
   // Analytics routes
   app.get('/api/analytics/vendor', authenticate, async (req: AuthenticatedRequest, res) => {
     try {
@@ -583,6 +666,255 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching admin stats:", error);
       res.status(500).json({ message: "Failed to fetch admin stats" });
+    }
+  });
+
+  // Admin reports routes
+  app.get('/api/admin/reports', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const user = await storage.getUser(userId);
+
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const { timeRange } = req.query;
+      
+      // Mock report data - replace with actual database queries
+      const reportData = {
+        totalRevenue: 2500000,
+        revenueGrowth: 15.8,
+        newUsers: 1250,
+        userGrowth: 23.4,
+        totalOrders: 3420,
+        orderGrowth: 18.7,
+        totalCommission: 250000,
+        commissionGrowth: 12.3
+      };
+
+      res.json(reportData);
+    } catch (error) {
+      console.error("Error fetching admin reports:", error);
+      res.status(500).json({ message: "Failed to fetch admin reports" });
+    }
+  });
+
+  app.get('/api/admin/reports/registrations', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const user = await storage.getUser(userId);
+
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      // Mock registration data
+      const registrationData = {
+        timeline: [
+          { date: '2024-01-01', buyers: 45, vendors: 12, installers: 8 },
+          { date: '2024-01-02', buyers: 52, vendors: 15, installers: 10 },
+          { date: '2024-01-03', buyers: 38, vendors: 8, installers: 6 },
+          { date: '2024-01-04', buyers: 65, vendors: 18, installers: 12 },
+          { date: '2024-01-05', buyers: 72, vendors: 22, installers: 15 }
+        ],
+        distribution: [
+          { name: 'Buyers', value: 68 },
+          { name: 'Vendors', value: 22 },
+          { name: 'Installers', value: 10 }
+        ]
+      };
+
+      res.json(registrationData);
+    } catch (error) {
+      console.error("Error fetching registration reports:", error);
+      res.status(500).json({ message: "Failed to fetch registration reports" });
+    }
+  });
+
+  app.get('/api/admin/reports/sales', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const user = await storage.getUser(userId);
+
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      // Mock sales data
+      const salesData = {
+        timeline: [
+          { date: '2024-01-01', orders: 125, revenue: 45000 },
+          { date: '2024-01-02', orders: 142, revenue: 52000 },
+          { date: '2024-01-03', orders: 98, revenue: 38000 },
+          { date: '2024-01-04', orders: 167, revenue: 65000 },
+          { date: '2024-01-05', orders: 183, revenue: 72000 }
+        ],
+        topCategories: [
+          { name: 'Residential Solar', orders: 450, revenue: 180000 },
+          { name: 'Commercial Solar', orders: 280, revenue: 350000 },
+          { name: 'Solar Accessories', orders: 320, revenue: 95000 },
+          { name: 'Industrial Solar', orders: 150, revenue: 280000 }
+        ]
+      };
+
+      res.json(salesData);
+    } catch (error) {
+      console.error("Error fetching sales reports:", error);
+      res.status(500).json({ message: "Failed to fetch sales reports" });
+    }
+  });
+
+  app.get('/api/admin/reports/vendor-performance', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const user = await storage.getUser(userId);
+
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      // Mock vendor performance data
+      const vendorPerformance = {
+        topVendors: [
+          { 
+            id: 1, 
+            companyName: 'SolarTech Solutions', 
+            totalOrders: 245, 
+            totalProducts: 45, 
+            totalRevenue: 180000,
+            totalCommission: 18000 
+          },
+          { 
+            id: 2, 
+            companyName: 'Green Energy Corp', 
+            totalOrders: 198, 
+            totalProducts: 32, 
+            totalRevenue: 150000,
+            totalCommission: 15000 
+          },
+          { 
+            id: 3, 
+            companyName: 'Sunshine Solar', 
+            totalOrders: 167, 
+            totalProducts: 28, 
+            totalRevenue: 125000,
+            totalCommission: 12500 
+          }
+        ]
+      };
+
+      res.json(vendorPerformance);
+    } catch (error) {
+      console.error("Error fetching vendor performance:", error);
+      res.status(500).json({ message: "Failed to fetch vendor performance" });
+    }
+  });
+
+  app.get('/api/admin/reports/commissions', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const user = await storage.getUser(userId);
+
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      // Mock commission data
+      const commissionData = {
+        timeline: [
+          { date: '2024-01-01', commission: 4500 },
+          { date: '2024-01-02', commission: 5200 },
+          { date: '2024-01-03', commission: 3800 },
+          { date: '2024-01-04', commission: 6500 },
+          { date: '2024-01-05', commission: 7200 }
+        ],
+        total: 250000,
+        averageRate: 10,
+        topVendor: 'SolarTech Solutions',
+        thisMonth: 48500
+      };
+
+      res.json(commissionData);
+    } catch (error) {
+      console.error("Error fetching commission reports:", error);
+      res.status(500).json({ message: "Failed to fetch commission reports" });
+    }
+  });
+
+  // Vendor registration and approval routes
+  app.post('/api/vendors/register', async (req, res) => {
+    try {
+      // Handle vendor registration with custom fields
+      const registrationData = req.body;
+      
+      // Create pending vendor application
+      const application = await storage.createVendorApplication(registrationData);
+      
+      res.status(201).json({ 
+        message: "Registration submitted successfully",
+        applicationId: application.id 
+      });
+    } catch (error) {
+      console.error("Error processing vendor registration:", error);
+      res.status(500).json({ message: "Failed to process registration" });
+    }
+  });
+
+  app.get('/api/admin/vendors/pending', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const user = await storage.getUser(userId);
+
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const pendingVendors = await storage.getPendingVendorApplications();
+      res.json(pendingVendors);
+    } catch (error) {
+      console.error("Error fetching pending vendors:", error);
+      res.status(500).json({ message: "Failed to fetch pending vendors" });
+    }
+  });
+
+  app.post('/api/admin/vendors/:id/approve', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const user = await storage.getUser(userId);
+
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const vendorId = req.params.id;
+      await storage.approveVendorApplication(vendorId);
+      
+      res.json({ message: "Vendor approved successfully" });
+    } catch (error) {
+      console.error("Error approving vendor:", error);
+      res.status(500).json({ message: "Failed to approve vendor" });
+    }
+  });
+
+  app.post('/api/admin/vendors/:id/reject', authenticate, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.user!.id;
+      const user = await storage.getUser(userId);
+
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const vendorId = req.params.id;
+      const { reason } = req.body;
+      
+      await storage.rejectVendorApplication(vendorId, reason);
+      
+      res.json({ message: "Vendor application rejected" });
+    } catch (error) {
+      console.error("Error rejecting vendor:", error);
+      res.status(500).json({ message: "Failed to reject vendor" });
     }
   });
 
