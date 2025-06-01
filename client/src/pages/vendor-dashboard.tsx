@@ -20,6 +20,9 @@ import RefundManagement from "@/components/vendor/refund-management";
 import StaffManagement from "@/components/vendor/staff-management";
 import PayoutManagement from "@/components/vendor/payout-management";
 import VendorVerification from "@/components/vendor/vendor-verification";
+import StorePolicies from "@/components/vendor/store-policies";
+import StoreReviews from "@/components/vendor/store-reviews";
+import SupportTickets from "@/components/vendor/support-tickets";
 import { 
   Package, 
   TrendingUp, 
@@ -303,15 +306,15 @@ export default function VendorDashboard() {
           </TabsContent>
 
           <TabsContent value="policies" className="space-y-6">
-            <StorePoliciesTab vendor={vendor} />
+            <StorePolicies />
           </TabsContent>
 
           <TabsContent value="reviews" className="space-y-6">
-            <StoreReviewsTab vendor={vendor} />
+            <StoreReviews />
           </TabsContent>
 
           <TabsContent value="support" className="space-y-6">
-            <SupportTicketsTab vendor={vendor} />
+            <SupportTickets />
           </TabsContent>
 
           <TabsContent value="badges" className="space-y-6">
