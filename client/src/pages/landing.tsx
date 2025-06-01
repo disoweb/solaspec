@@ -142,44 +142,51 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             <div className="animate-fade-in">
-              <div className="flex flex-wrap items-center gap-4 mb-6">
-                <Badge
-                  variant="secondary"
-                  className="bg-green-100 text-green-800 hover:bg-green-100"
-                >
-                  🏆 #1 Rated Solar Marketplace
-                </Badge>
-                <div className="flex items-center space-x-1">
-                  <div className="flex">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className="w-4 h-4 text-yellow-400 fill-current"
-                      />
-                    ))}
-                  </div>
-                  <span className="text-sm font-semibold text-foreground">
-                    4.9/5
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    (2,847 reviews)
-                  </span>
-                </div>
-                <Badge
-                  variant="secondary"
-                  className="bg-blue-100 text-blue-800 hover:bg-blue-100"
-                >
-                  $2.4B+ Solar Systems Sold
-                </Badge>
-              </div>
+<div className="flex flex-wrap items-center gap-4 mb-6">
+  <Badge
+    variant="secondary"
+    className="bg-green-100 text-green-800 hover:bg-green-100"
+  >
+    🏆 #1 Solar Marketplace
+  </Badge>
+  <div className="flex items-center space-x-1">
+    <div className="flex">
+      {[...Array(5)].map((_, i) => (
+        <Star
+          key={i}
+          className="w-4 h-4 text-yellow-400 fill-current"
+        />
+      ))}
+    </div>
+    <span className="text-sm font-semibold text-foreground">
+      4.9/5
+    </span>
+    <span className="text-sm text-muted-foreground">
+    </span>
+  </div>
+<div className="grid grid-cols-2 gap-2">
+  <Badge
+    variant="secondary"
+    className="bg-blue-100 text-blue-800 hover:bg-blue-100"
+  >
+    $2.4B+ Systems Sold
+  </Badge>
+  <Badge
+    variant="secondary"
+    className="bg-purple-100 text-purple-800 hover:bg-purple-100"
+  >
+    Trusted by 500K+
+  </Badge>
+</div>
+</div>
 
               <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-foreground mb-4 sm:mb-6">
-                Verified Solar Systems with{" "}
-                <span className="text-blue-600">Escrow Protection</span>
+                Verified Solar Vendors With{" "}
+                <span className="text-blue-600">Secure Escrow Protection</span>
               </h1>
 
               <p className="text-base sm:text-lg lg:text-xl text-muted-foreground mb-6 sm:mb-8">
-                Connect with certified vendors and installers. Shop with
+                Connect with certified solar vendors and installers. Shop with
                 confidence using our secure escrow system and pay in flexible
                 installments.
               </p>
@@ -208,7 +215,7 @@ export default function Landing() {
                     Verified Vendors
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Licensed & Insured
+                    Verified
                   </p>
                 </div>
                 <div className="text-center">
@@ -227,10 +234,10 @@ export default function Landing() {
                     <Zap className="w-6 h-6 text-yellow-600" />
                   </div>
                   <p className="text-sm font-medium text-foreground">
-                    Fast Installation
+                   Certifified Technicians
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    30-Day Average
+                   Fast & Reliable
                   </p>
                 </div>
               </div>
@@ -292,7 +299,7 @@ export default function Landing() {
       </section>
 
       {/* Featured Products Section */}
-      <section className="py-16 bg-card">
+      <section className="py-10 bg-card">
         <div className="max-w-7xl mx-auto container-mobile">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-foreground mb-4">
