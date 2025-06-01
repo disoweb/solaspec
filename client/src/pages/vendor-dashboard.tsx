@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -342,9 +341,10 @@ function ProductsTab({ vendor }: { vendor: any }) {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [productFilter, setProductFilter] = useState("all");
 
   const { data: products, isLoading } = useQuery({
-    queryKey: ["/api/products", vendor?.id ? `?vendorId=${vendor.id}` : ""],
+    queryKey: ["/api/products", vendor?.id ? `?vendorId=${vendor.id}` : "", productFilter],
     enabled: !!vendor?.id,
   });
 
@@ -430,6 +430,20 @@ function ProductsTab({ vendor }: { vendor: any }) {
             Add Product
           </Button>
         </div>
+      </div>
+
+      <div className="pb-4">
+        <Select value={productFilter} onValueChange={setProductFilter}>
+          <SelectTrigger>
+            <SelectValue placeholder="Filter Products" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Products</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="inactive">Inactive</SelectItem>
+            <SelectItem value="draft">Draft</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {showForm && (
@@ -576,7 +590,7 @@ function ProductsTab({ vendor }: { vendor: any }) {
 // Inventory Tab Component
 function InventoryTab({ vendor, inventory }: { vendor: any; inventory: any[] }) {
   const { toast } = useToast();
-  
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -634,6 +648,8 @@ function InventoryTab({ vendor, inventory }: { vendor: any; inventory: any[] }) 
 
 // Orders Tab Component
 function OrdersTab({ orders }: { orders: any[] }) {
+  const [orderFilter, setOrderFilter] = useState("all");
+
   if (!orders || orders.length === 0) {
     return (
       <Card>
@@ -648,6 +664,22 @@ function OrdersTab({ orders }: { orders: any[] }) {
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-foreground">Order Management</h2>
+
+      <div className="pb-4">
+        <Select value={orderFilter} onValueChange={setOrderFilter}>
+          <SelectTrigger>
+            <SelectValue placeholder="Filter Orders" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Orders</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="processing">Processing</SelectItem>
+            <SelectItem value="shipped">Shipped</SelectItem>
+            <SelectItem value="delivered">Delivered</SelectItem>
+            <SelectItem value="cancelled">Cancelled</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
       <div className="space-y-4">
         {orders.map((order: any) => (
@@ -732,7 +764,7 @@ function AnalyticsTab({ vendor }: { vendor: any }) {
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Analytics & Reports</h2>
-      
+
       <Card>
         <CardContent className="p-6 text-center">
           <BarChart3 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
@@ -881,7 +913,7 @@ function BadgesTab({ vendor }: { vendor: any }) {
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Vendor Badges</h2>
-      
+
       <Card>
         <CardHeader>
           <CardTitle>Your Achievements</CardTitle>
@@ -1021,7 +1053,7 @@ function StoreReviewsTab({ vendor }: { vendor: any }) {
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Store Reviews</h2>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardContent className="p-6">
@@ -1092,20 +1124,20 @@ function StoreReviewsTab({ vendor }: { vendor: any }) {
                       {new Date(review.createdAt).toLocaleDateString()}
                     </span>
                   </div>
-                  
+
                   {review.title && (
                     <h4 className="font-medium mb-1">{review.title}</h4>
                   )}
-                  
+
                   <p className="text-sm text-gray-600 mb-2">{review.comment}</p>
-                  
+
                   {review.vendorReply && (
                     <div className="bg-gray-50 p-3 rounded-lg mt-2">
                       <p className="text-xs text-gray-500 mb-1">Vendor Response:</p>
                       <p className="text-sm">{review.vendorReply}</p>
                     </div>
                   )}
-                  
+
                   {!review.vendorReply && (
                     <Button size="sm" variant="outline">
                       Reply to Review
@@ -1254,7 +1286,7 @@ function SettingsTab({ vendor }: { vendor: any }) {
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Vendor Settings</h2>
-      
+
       <Card>
         <CardHeader>
           <CardTitle>Store Information</CardTitle>
