@@ -15,6 +15,8 @@ import BuyerDashboard from "./pages/buyer-dashboard";
 import VendorDashboard from "./pages/vendor-dashboard";
 import AdminDashboard from "./pages/admin-dashboard";
 import Installers from "./pages/installers";
+import Checkout from "./pages/checkout";
+import OrderConfirmation from "./pages/order-confirmation";
 import NotFound from "./pages/not-found";
 import "./index.css";
 import InstallerDashboard from "./pages/installer-dashboard";
@@ -33,8 +35,8 @@ function App() {
             <Route path="/categories" component={Categories} />
             <Route path="/product/:id" component={ProductDetails} />
             <Route path="/installers" component={Installers} />
-            <Route path="/checkout" component={lazy(() => import("@/pages/checkout"))} />
-            <Route path="/order-confirmation/:orderId" component={lazy(() => import("@/pages/order-confirmation"))} />
+            <Route path="/checkout" component={Checkout} />
+            <Route path="/order-confirmation/:orderId" component={OrderConfirmation} />
             <Route path="/admin-dashboard" component={AdminDashboard} />
             <Route path="/vendor-dashboard" component={VendorDashboard} />
             <Route path="/installer-dashboard" component={InstallerDashboard} />
