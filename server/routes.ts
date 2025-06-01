@@ -40,35 +40,6 @@ import * as dotenv from "dotenv";
 
 dotenv.config();
 
-// JWT Configuration
-const JWT_SECRET = (() => {
-  // 1. Check for environment variable first
-  if (process.env.JWT_SECRET) {
-    if (
-      process.env.NODE_ENV === "production" &&
-      process.env.JWT_SECRET.length < 32
-    ) {
-      throw new Error("Production JWT_SECRET must be at least 32 characters");
-    }
-    return process.env.JWT_SECRET;
-  }
-
-  // 2. Warn if using fallback in production
-  if (process.env.NODE_ENV === "production") {
-    console.error("WARNING: Using fallback JWT secret in production!");
-    console.error("Set JWT_SECRET environment variable for better security.");
-  }
-
-  // 3. Generate secure fallback for development
-  const fallbackSecret = crypto.randomBytes(32).toString("hex");
-  console.warn(`Generated temporary JWT secret: ${fallbackSecret}`);
-  console.warn("For production, set JWT_SECRET environment variable");
-
-  return fallbackSecret;
-})();
-
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
-
 export async function registerRoutes(app: Express): Promise<Server> {
   app.use(cookieParser());
 
@@ -129,11 +100,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const token = jwt.sign(
-        { userId: newUser.id, email: newUser.email, role: newUser.role },
-        JWT_SECRET,
-        { expiresIn: "7d" },
-      );
+      const token = AuthService.generateToken(newUser);
 
       res.cookie("auth-token", token, {
         httpOnly: true,
@@ -177,11 +144,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Generate JWT token
-      const token = jwt.sign(
-        { id: user.id, userId: user.id, email: user.email, role: user.role },
-        JWT_SECRET,
-        { expiresIn: "7d" },
-      );
+      const token = AuthService.generateToken(user);
 
       // Set cookie
       res.cookie("auth-token", token, {
