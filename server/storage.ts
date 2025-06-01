@@ -714,6 +714,380 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
+  // Product import/export methods
+  async getProductsByVendor(vendorId: number) {
+    return await db.select().from(products).where(eq(products.vendorId, vendorId));
+  }
+
+  // Vendor application methods
+  async createVendorApplication(data: any) {
+    // For now, create a pending vendor record
+    const [application] = await db.insert(vendors)
+      .values({
+        userId: data.userId,
+        companyName: data.companyName,
+        description: data.description,
+        website: data.website,
+        verified: false
+      })
+      .returning();
+    return application;
+  }
+
+  async getPendingVendorApplications() {
+    return await db.select({
+      id: vendors.id,
+      companyName: vendors.companyName,
+      description: vendors.description,
+      website: vendors.website,
+      verified: vendors.verified,
+      email: users.email,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      createdAt: vendors.createdAt
+    })
+    .from(vendors)
+    .innerJoin(users, eq(vendors.userId, users.id))
+    .where(eq(vendors.verified, false));
+  }
+
+  async approveVendorApplication(vendorId: string) {
+    const [vendor] = await db.update(vendors)
+      .set({ verified: true })
+      .where(eq(vendors.id, parseInt(vendorId)))
+      .returning();
+    return vendor;
+  }
+
+  async rejectVendorApplication(vendorId: string, reason: string) {
+    // In a real implementation, you might want to store rejection reasons
+    await db.delete(vendors).where(eq(vendors.id, parseInt(vendorId)));
+  }
+
+  // Vendor group methods
+  async createVendorGroup(data: any) {
+    const [group] = await db.insert(vendorGroups).values(data).returning();
+    return group;
+  }
+
+  async getVendorGroups() {
+    return await db.select().from(vendorGroups);
+  }
+
+  async assignVendorToGroup(vendorId: number, groupId: number) {
+    const [membership] = await db.insert(vendorGroupMemberships)
+      .values({ vendorId, groupId })
+      .returning();
+    return membership;
+  }
+
+  // Vendor staff methods
+  async inviteVendorStaff(data: any) {
+    const [staff] = await db.insert(vendorStaff).values(data).returning();
+    return staff;
+  }
+
+  async getVendorStaff(vendorId: number) {
+    return await db.select({
+      id: vendorStaff.id,
+      role: vendorStaff.role,
+      permissions: vendorStaff.permissions,
+      isActive: vendorStaff.isActive,
+      invitedAt: vendorStaff.invitedAt,
+      joinedAt: vendorStaff.joinedAt,
+      email: users.email,
+      firstName: users.firstName,
+      lastName: users.lastName
+    })
+    .from(vendorStaff)
+    .innerJoin(users, eq(vendorStaff.userId, users.id))
+    .where(eq(vendorStaff.vendorId, vendorId));
+  }
+
+  // Vendor payout methods
+  async getVendorPayouts(vendorId: number) {
+    return await db.select().from(vendorPayouts).where(eq(vendorPayouts.vendorId, vendorId));
+  }
+
+  async getVendorBalance(vendorId: number): Promise<number> {
+    const [result] = await db.select({
+      balance: sql<number>`COALESCE(SUM(CASE WHEN type IN ('commission', 'bonus') THEN amount ELSE -amount END), 0)`
+    })
+    .from(vendorPayouts)
+    .where(eq(vendorPayouts.vendorId, vendorId));
+    
+    return result?.balance || 0;
+  }
+
+  // Vendor withdrawal methods
+  async createVendorWithdrawal(data: any) {
+    const [withdrawal] = await db.insert(vendorWithdrawals).values(data).returning();
+    return withdrawal;
+  }
+
+  async getVendorWithdrawals(filters: any) {
+    let query = db.select().from(vendorWithdrawals);
+    
+    if (filters.vendorId) {
+      query = query.where(eq(vendorWithdrawals.vendorId, filters.vendorId));
+    }
+    
+    return await query;
+  }
+
+  // Vendor coupon methods
+  async createVendorCoupon(data: any) {
+    const [coupon] = await db.insert(vendorCoupons).values(data).returning();
+    return coupon;
+  }
+
+  async getVendorCoupons(vendorId: number) {
+    return await db.select().from(vendorCoupons).where(eq(vendorCoupons.vendorId, vendorId));
+  }
+
+  // Vendor badge methods
+  async createVendorBadge(data: any) {
+    const [badge] = await db.insert(vendorBadges).values(data).returning();
+    return badge;
+  }
+
+  async getVendorBadgeAssignments(vendorId: number) {
+    return await db.select({
+      id: vendorBadgeAssignments.id,
+      awardedAt: vendorBadgeAssignments.awardedAt,
+      expiresAt: vendorBadgeAssignments.expiresAt,
+      badge: {
+        id: vendorBadges.id,
+        name: vendorBadges.name,
+        description: vendorBadges.description,
+        icon: vendorBadges.icon,
+        color: vendorBadges.color
+      }
+    })
+    .from(vendorBadgeAssignments)
+    .innerJoin(vendorBadges, eq(vendorBadgeAssignments.badgeId, vendorBadges.id))
+    .where(eq(vendorBadgeAssignments.vendorId, vendorId));
+  }
+
+  async assignBadgeToVendor(vendorId: number, badgeId: number, awardedBy: number) {
+    const [assignment] = await db.insert(vendorBadgeAssignments)
+      .values({ vendorId, badgeId, awardedBy })
+      .returning();
+    return assignment;
+  }
+
+  // Verification document methods
+  async getVendorVerificationDocuments(vendorId: number) {
+    if (vendorId === 0) {
+      // Admin view - get all documents
+      return await db.select({
+        id: vendorVerificationDocuments.id,
+        documentType: vendorVerificationDocuments.documentType,
+        documentName: vendorVerificationDocuments.documentName,
+        status: vendorVerificationDocuments.status,
+        submittedAt: vendorVerificationDocuments.submittedAt,
+        reviewedAt: vendorVerificationDocuments.reviewedAt,
+        vendor: {
+          id: vendors.id,
+          companyName: vendors.companyName
+        }
+      })
+      .from(vendorVerificationDocuments)
+      .innerJoin(vendors, eq(vendorVerificationDocuments.vendorId, vendors.id));
+    }
+    
+    return await db.select()
+      .from(vendorVerificationDocuments)
+      .where(eq(vendorVerificationDocuments.vendorId, vendorId));
+  }
+
+  async getVerificationRequirements() {
+    return await db.select().from(vendorVerificationRequirements);
+  }
+
+  async createVerificationDocument(data: any) {
+    const [document] = await db.insert(vendorVerificationDocuments).values(data).returning();
+    return document;
+  }
+
+  async updateVerificationDocument(documentId: number, data: any) {
+    const [document] = await db.update(vendorVerificationDocuments)
+      .set({ ...data, reviewedAt: new Date() })
+      .where(eq(vendorVerificationDocuments.id, documentId))
+      .returning();
+    return document;
+  }
+
+  // Abuse report methods
+  async createAbuseReport(data: any) {
+    const [report] = await db.insert(abuseReports).values(data).returning();
+    return report;
+  }
+
+  async getAbuseReports(filters: any) {
+    let query = db.select().from(abuseReports);
+    
+    if (filters.status) {
+      query = query.where(eq(abuseReports.status, filters.status));
+    }
+    
+    return await query;
+  }
+
+  async updateAbuseReport(reportId: number, data: any) {
+    const [report] = await db.update(abuseReports)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(abuseReports.id, reportId))
+      .returning();
+    return report;
+  }
+
+  // Store policy methods
+  async getStorePolicies(vendorId: number) {
+    return await db.select().from(vendorStorePolicies).where(eq(vendorStorePolicies.vendorId, vendorId));
+  }
+
+  async createStorePolicy(data: any) {
+    const [policy] = await db.insert(vendorStorePolicies).values(data).returning();
+    return policy;
+  }
+
+  async updateStorePolicy(policyId: number, data: any) {
+    const [policy] = await db.update(vendorStorePolicies)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(vendorStorePolicies.id, policyId))
+      .returning();
+    return policy;
+  }
+
+  async deleteStorePolicy(policyId: number) {
+    await db.delete(vendorStorePolicies).where(eq(vendorStorePolicies.id, policyId));
+  }
+
+  // Store review methods
+  async getStoreReviews(vendorId: number, options: any = {}) {
+    let query = db.select({
+      id: storeReviews.id,
+      rating: storeReviews.rating,
+      title: storeReviews.title,
+      comment: storeReviews.comment,
+      serviceRating: storeReviews.serviceRating,
+      communicationRating: storeReviews.communicationRating,
+      deliveryRating: storeReviews.deliveryRating,
+      vendorReply: storeReviews.vendorReply,
+      vendorRepliedAt: storeReviews.vendorRepliedAt,
+      isVerifiedPurchase: storeReviews.isVerifiedPurchase,
+      helpfulVotes: storeReviews.helpfulVotes,
+      createdAt: storeReviews.createdAt,
+      user: {
+        firstName: users.firstName,
+        lastName: users.lastName
+      }
+    })
+    .from(storeReviews)
+    .innerJoin(users, eq(storeReviews.userId, users.id))
+    .where(eq(storeReviews.vendorId, vendorId));
+
+    if (options.hideReported) {
+      query = query.where(eq(storeReviews.isReported, false));
+    }
+
+    return await query;
+  }
+
+  async createStoreReview(data: any) {
+    const [review] = await db.insert(storeReviews).values(data).returning();
+    return review;
+  }
+
+  async reportStoreReview(reviewId: number, data: any) {
+    const [review] = await db.update(storeReviews)
+      .set({
+        isReported: true,
+        reportReason: data.reason,
+        reportedAt: new Date(),
+        reportedBy: data.reportedBy
+      })
+      .where(eq(storeReviews.id, reviewId))
+      .returning();
+    return review;
+  }
+
+  async addVendorReply(reviewId: number, reply: string) {
+    const [review] = await db.update(storeReviews)
+      .set({
+        vendorReply: reply,
+        vendorRepliedAt: new Date()
+      })
+      .where(eq(storeReviews.id, reviewId))
+      .returning();
+    return review;
+  }
+
+  async voteReviewHelpful(reviewId: number, userId: number, isHelpful: boolean) {
+    // Check if user already voted
+    const existingVote = await db.select()
+      .from(reviewHelpfulVotes)
+      .where(and(
+        eq(reviewHelpfulVotes.reviewId, reviewId),
+        eq(reviewHelpfulVotes.userId, userId)
+      ));
+
+    if (existingVote.length === 0) {
+      await db.insert(reviewHelpfulVotes).values({
+        reviewId,
+        userId,
+        isHelpful
+      });
+
+      // Update helpful votes count
+      const [review] = await db.update(storeReviews)
+        .set({
+          helpfulVotes: sql`${storeReviews.helpfulVotes} + ${isHelpful ? 1 : 0}`
+        })
+        .where(eq(storeReviews.id, reviewId))
+        .returning();
+
+      return review?.helpfulVotes || 0;
+    }
+
+    return 0;
+  }
+
+  // Announcement methods
+  async getAnnouncements(userId: number, userRole: string) {
+    return await db.select({
+      id: adminAnnouncements.id,
+      title: adminAnnouncements.title,
+      content: adminAnnouncements.content,
+      type: adminAnnouncements.type,
+      publishedAt: adminAnnouncements.publishedAt,
+      expiresAt: adminAnnouncements.expiresAt,
+      isRead: sql<boolean>`CASE WHEN ${announcementReadStatus.id} IS NOT NULL THEN true ELSE false END`
+    })
+    .from(adminAnnouncements)
+    .leftJoin(announcementReadStatus, and(
+      eq(announcementReadStatus.announcementId, adminAnnouncements.id),
+      eq(announcementReadStatus.userId, userId)
+    ))
+    .where(and(
+      eq(adminAnnouncements.isActive, true),
+      or(
+        sql`${adminAnnouncements.publishedAt} IS NULL`,
+        sql`${adminAnnouncements.publishedAt} <= NOW()`
+      ),
+      or(
+        sql`${adminAnnouncements.expiresAt} IS NULL`,
+        sql`${adminAnnouncements.expiresAt} > NOW()`
+      )
+    ));
+  }
+
+  async createAnnouncement(data: any) {
+    const [announcement] = await db.insert(adminAnnouncements).values(data).returning();
+    return announcement;
+  }
+
   async getAdminStats(): Promise<{
     totalUsers: number;
     totalVendors: number;

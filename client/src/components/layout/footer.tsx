@@ -88,7 +88,7 @@ export default function Footer() {
         </div>
 
         {/* Main Footer Content */}
-        <div className="grid md:grid-cols-4 gap-8">
+        <div className="grid md:grid-cols-5 gap-8">
           {/* Brand */}
           <div>
             <div className="flex items-center space-x-2 mb-4">
@@ -170,12 +170,12 @@ export default function Footer() {
             <h3 className="text-lg font-semibold mb-4">For Vendors</h3>
             <ul className="space-y-2 text-gray-400">
               <li>
-                <a
-                  href="/api/login"
+                <Link
+                  href="/become-vendor"
                   className="hover:text-white transition-colors flex items-center"
                 >
                   <Landmark className="w-4 h-4 mr-2" /> Sell on Solaspec
-                </a>
+                </Link>
               </li>
               <li>
                 <Link
@@ -199,6 +199,45 @@ export default function Footer() {
                   className="hover:text-white transition-colors flex items-center"
                 >
                   <Landmark className="w-4 h-4 mr-2" /> Fee Structure
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Admin Access */}
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Administration</h3>
+            <ul className="space-y-2 text-gray-400">
+              <li>
+                <Link
+                  href="/login?admin=true"
+                  className="hover:text-white transition-colors flex items-center"
+                >
+                  <Lock className="w-4 h-4 mr-2" /> Admin Login
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/admin-dashboard"
+                  className="hover:text-white transition-colors flex items-center"
+                >
+                  <Shield className="w-4 h-4 mr-2" /> Admin Dashboard
+                </Link>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="hover:text-white transition-colors flex items-center"
+                >
+                  <ShieldCheck className="w-4 h-4 mr-2" /> System Status
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="hover:text-white transition-colors flex items-center"
+                >
+                  <FileText className="w-4 h-4 mr-2" /> Documentation
                 </a>
               </li>
             </ul>
