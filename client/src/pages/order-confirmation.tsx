@@ -1,10 +1,12 @@
-
-import { useParams } from "wouter";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
+import { useParams } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import { 
@@ -18,25 +20,67 @@ import {
   Clock,
   Star,
   Shield,
-  Award
+  Award,
+  Eye,
+  Share2,
+  Split
 } from "lucide-react";
 
 export default function OrderConfirmation() {
+  const { user } = useAuth();
   const { orderId } = useParams<{ orderId: string }>();
+  const [parentOrderId, setParentOrderId] = useState<string>("");
 
-  const { data: order, isLoading } = useQuery({
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const parentId = urlParams.get('parentOrderId');
+    if (parentId) {
+      setParentOrderId(parentId);
+    }
+  }, []);
+
+  const { data: order, isLoading: isSingleLoading } = useQuery({
     queryKey: [`/api/orders/${orderId}`],
-    enabled: !!orderId,
+    enabled: !!orderId && !parentOrderId,
   });
+
+  const { data: orderSummary, isLoading: isSummaryLoading } = useQuery({
+    queryKey: ["/api/orders/parent", parentOrderId],
+    enabled: !!parentOrderId,
+  });
+
+  const isLoading = isSingleLoading || isSummaryLoading;
+  const isMultiVendor = !!parentOrderId;
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="max-w-7xl mx-auto container-mobile py-12">
+          <Card>
+            <CardContent className="p-6 text-center">
+              <p className="text-muted-foreground">Please sign in to view your order.</p>
+            </CardContent>
+          </Card>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
-        <div className="max-w-4xl mx-auto container-mobile py-8">
+        <div className="max-w-7xl mx-auto container-mobile py-12">
           <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-muted rounded w-1/3"></div>
-            <div className="h-64 bg-muted rounded"></div>
+            {[...Array(3)].map((_, i) => (
+              <Card key={i}>
+                <CardContent className="p-6">
+                  <div className="h-32 bg-gray-200 rounded"></div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
         <Footer />
@@ -44,7 +88,61 @@ export default function OrderConfirmation() {
     );
   }
 
-  if (!order) {
+  const getStatusBadge = (status: string) => {
+    const variants: any = {
+      pending: "secondary",
+      confirmed: "default",
+      preparing: "outline",
+      installing: "default",
+      completed: "default",
+      cancelled: "destructive"
+    };
+    
+    const colors: any = {
+      pending: "bg-yellow-100 text-yellow-800",
+      confirmed: "bg-blue-100 text-blue-800",
+      preparing: "bg-purple-100 text-purple-800",
+      installing: "bg-orange-100 text-orange-800",
+      completed: "bg-green-100 text-green-800",
+      cancelled: "bg-red-100 text-red-800"
+    };
+
+    return (
+      <Badge variant={variants[status]} className={colors[status]}>
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+      </Badge>
+    );
+  };
+
+  const getStatusProgress = (status: string) => {
+    switch (status) {
+      case 'pending': return 20;
+      case 'confirmed': return 40;
+      case 'preparing': return 60;
+      case 'installing': return 80;
+      case 'completed': return 100;
+      default: return 0;
+    }
+  };
+
+  const getOverallStatusMessage = (status: string) => {
+    switch (status) {
+      case 'completed': 
+        return { message: 'All orders completed successfully!', color: 'text-green-600' };
+      case 'installing': 
+        return { message: 'Orders are being processed', color: 'text-blue-600' };
+      case 'confirmed': 
+        return { message: 'Orders are confirmed', color: 'text-yellow-600' };
+      case 'partially_cancelled': 
+        return { message: 'Some orders were cancelled', color: 'text-orange-600' };
+      case 'cancelled': 
+        return { message: 'All orders were cancelled', color: 'text-red-600' };
+      default:
+        return { message: 'Mixed status - check individual orders', color: 'text-gray-600' };
+    }
+  };
+
+  if (!order && !orderSummary) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -67,26 +165,211 @@ export default function OrderConfirmation() {
     );
   }
 
-  const getStatusProgress = (status: string) => {
-    switch (status) {
-      case 'pending': return 20;
-      case 'confirmed': return 40;
-      case 'preparing': return 60;
-      case 'installing': return 80;
-      case 'completed': return 100;
-      default: return 0;
-    }
-  };
+  if (isMultiVendor && orderSummary) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        
+        <div className="max-w-4xl mx-auto container-mobile py-8">
+          {/* Success Header */}
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-8 h-8 text-green-600" />
+            </div>
+            <h1 className="text-3xl font-bold text-foreground mb-2">Order Confirmed!</h1>
+            <p className="text-lg text-muted-foreground">
+              Your multi-vendor order has been successfully processed
+            </p>
+          </div>
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return 'text-green-600';
-      case 'installing': return 'text-blue-600';
-      case 'confirmed': return 'text-yellow-600';
-      default: return 'text-muted-foreground';
-    }
-  };
+          {/* Order Overview */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Split className="w-5 h-5" />
+                Order Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">
+                    {orderSummary.totalSubOrders}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Vendor Orders</div>
+                </div>
+                
+                <div className="text-center">
+                  <div className="text-2xl font-bold">
+                    ${orderSummary.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Total Amount</div>
+                </div>
+                
+                <div className="text-center">
+                  <div className="text-sm font-medium mb-1">Overall Status</div>
+                  {getStatusBadge(orderSummary.overallStatus)}
+                </div>
+                
+                <div className="text-center">
+                  <div className="text-sm font-medium mb-1">Order ID</div>
+                  <div className="text-xs text-muted-foreground font-mono">
+                    {parentOrderId.slice(0, 8)}...
+                  </div>
+                </div>
+              </div>
 
+              <div className={`mt-4 p-3 rounded-lg bg-gray-50`}>
+                <p className={`text-sm font-medium ${getOverallStatusMessage(orderSummary.overallStatus).color}`}>
+                  {getOverallStatusMessage(orderSummary.overallStatus).message}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Individual Vendor Orders */}
+          <div className="space-y-4 mb-6">
+            <h2 className="text-xl font-semibold">Individual Vendor Orders</h2>
+            
+            {orderSummary.subOrders.map((subOrder: any, index: number) => (
+              <Card key={subOrder.id}>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <Package className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">Vendor Order #{index + 1}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Order ID: {subOrder.id.slice(0, 8)}...
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="text-right">
+                      <div className="font-semibold">
+                        ${parseFloat(subOrder.totalAmount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      </div>
+                      {getStatusBadge(subOrder.status)}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-muted-foreground" />
+                      <span>Ordered: {new Date(subOrder.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-muted-foreground" />
+                      <span>Updated: {new Date(subOrder.updatedAt).toLocaleDateString()}</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Truck className="w-4 h-4 text-muted-foreground" />
+                      <span>Est. delivery: 5-7 days</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex gap-2">
+                    <Button variant="outline" size="sm" asChild>
+                      <a href={`/orders/${subOrder.id}`}>
+                        <Eye className="w-4 h-4 mr-2" />
+                        View Details
+                      </a>
+                    </Button>
+                    <Button variant="outline" size="sm" asChild>
+                      <a href={`/track-order/${subOrder.id}`}>
+                        <Truck className="w-4 h-4 mr-2" />
+                        Track Order
+                      </a>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Next Steps */}
+          <Card>
+            <CardHeader>
+              <CardTitle>What happens next?</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-semibold text-blue-600">1</span>
+                  </div>
+                  <div>
+                    <h4 className="font-medium">Order Confirmation</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Each vendor will receive and confirm your order separately
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-semibold text-blue-600">2</span>
+                  </div>
+                  <div>
+                    <h4 className="font-medium">Preparation & Shipping</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Items will be prepared and shipped independently by each vendor
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-semibold text-blue-600">3</span>
+                  </div>
+                  <div>
+                    <h4 className="font-medium">Tracking Updates</h4>
+                    <p className="text-sm text-muted-foreground">
+                      You'll receive separate tracking information for each shipment
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-semibold text-blue-600">4</span>
+                  </div>
+                  <div>
+                    <h4 className="font-medium">Delivery & Support</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Each vendor will provide their own customer support and warranties
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Action Buttons */}
+          <div className="flex justify-center gap-4 mt-8">
+            <Button asChild>
+              <a href="/marketplace">Continue Shopping</a>
+            </Button>
+            <Button variant="outline" asChild>
+              <a href="/buyer-dashboard">View All Orders</a>
+            </Button>
+            <Button variant="outline">
+              <Download className="w-4 h-4 mr-2" />
+              Download Receipt
+            </Button>
+          </div>
+        </div>
+
+        <Footer />
+      </div>
+    );
+  }
+
+  // Single order view
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -145,9 +428,7 @@ export default function OrderConfirmation() {
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-medium">Progress</span>
-                    <Badge className={getStatusColor(order.status)}>
-                      {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                    </Badge>
+                    {getStatusBadge(order.status)}
                   </div>
                   <Progress value={getStatusProgress(order.status)} className="h-2" />
                 </div>
@@ -369,341 +650,6 @@ export default function OrderConfirmation() {
               </CardContent>
             </Card>
           </div>
-        </div>
-      </div>
-
-      <Footer />
-    </div>
-  );
-}
-import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import Header from "@/components/layout/header";
-import Footer from "@/components/layout/footer";
-import { 
-  CheckCircle, 
-  Package, 
-  Truck, 
-  Clock,
-  Eye,
-  Download,
-  Share2,
-  Calendar,
-  MapPin,
-  Shield,
-  Split
-} from "lucide-react";
-
-export default function OrderConfirmation() {
-  const { user } = useAuth();
-  const [parentOrderId, setParentOrderId] = useState<string>("");
-
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const orderId = urlParams.get('parentOrderId');
-    if (orderId) {
-      setParentOrderId(orderId);
-    }
-  }, []);
-
-  const { data: orderSummary, isLoading } = useQuery({
-    queryKey: ["/api/orders/parent", parentOrderId],
-    enabled: !!parentOrderId,
-  });
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="max-w-7xl mx-auto container-mobile py-12">
-          <Card>
-            <CardContent className="p-6 text-center">
-              <p className="text-muted-foreground">Please sign in to view your order.</p>
-            </CardContent>
-          </Card>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="max-w-7xl mx-auto container-mobile py-12">
-          <div className="animate-pulse space-y-6">
-            {[...Array(3)].map((_, i) => (
-              <Card key={i}>
-                <CardContent className="p-6">
-                  <div className="h-32 bg-gray-200 rounded"></div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
-
-  const getStatusBadge = (status: string) => {
-    const variants: any = {
-      pending: "secondary",
-      paid: "default",
-      escrow: "outline",
-      installing: "default",
-      completed: "default",
-      cancelled: "destructive"
-    };
-    
-    const colors: any = {
-      pending: "bg-yellow-100 text-yellow-800",
-      paid: "bg-blue-100 text-blue-800",
-      escrow: "bg-purple-100 text-purple-800",
-      installing: "bg-orange-100 text-orange-800",
-      completed: "bg-green-100 text-green-800",
-      cancelled: "bg-red-100 text-red-800"
-    };
-
-    return (
-      <Badge variant={variants[status]} className={colors[status]}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </Badge>
-    );
-  };
-
-  const getOverallStatusMessage = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return { message: 'All orders completed successfully!', color: 'text-green-600' };
-      case 'in_progress':
-        return { message: 'Orders are being processed', color: 'text-blue-600' };
-      case 'pending':
-        return { message: 'Orders are pending confirmation', color: 'text-yellow-600' };
-      case 'partially_cancelled':
-        return { message: 'Some orders were cancelled', color: 'text-orange-600' };
-      case 'cancelled':
-        return { message: 'All orders were cancelled', color: 'text-red-600' };
-      default:
-        return { message: 'Mixed status - check individual orders', color: 'text-gray-600' };
-    }
-  };
-
-  if (!orderSummary) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="max-w-7xl mx-auto container-mobile py-12">
-          <Card>
-            <CardContent className="p-6 text-center">
-              <p className="text-muted-foreground">Order not found.</p>
-            </CardContent>
-          </Card>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
-
-  const statusInfo = getOverallStatusMessage(orderSummary.overallStatus);
-
-  return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      
-      <div className="max-w-4xl mx-auto container-mobile py-8">
-        {/* Success Header */}
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <CheckCircle className="w-8 h-8 text-green-600" />
-          </div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Order Confirmed!</h1>
-          <p className="text-lg text-muted-foreground">
-            Your multi-vendor order has been successfully processed
-          </p>
-        </div>
-
-        {/* Order Overview */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Split className="w-5 h-5" />
-              Order Summary
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">
-                  {orderSummary.totalSubOrders}
-                </div>
-                <div className="text-sm text-muted-foreground">Vendor Orders</div>
-              </div>
-              
-              <div className="text-center">
-                <div className="text-2xl font-bold">
-                  ${orderSummary.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                </div>
-                <div className="text-sm text-muted-foreground">Total Amount</div>
-              </div>
-              
-              <div className="text-center">
-                <div className="text-sm font-medium mb-1">Overall Status</div>
-                {getStatusBadge(orderSummary.overallStatus)}
-              </div>
-              
-              <div className="text-center">
-                <div className="text-sm font-medium mb-1">Order ID</div>
-                <div className="text-xs text-muted-foreground font-mono">
-                  {parentOrderId.slice(0, 8)}...
-                </div>
-              </div>
-            </div>
-
-            <div className={`mt-4 p-3 rounded-lg bg-gray-50`}>
-              <p className={`text-sm font-medium ${statusInfo.color}`}>
-                {statusInfo.message}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Individual Vendor Orders */}
-        <div className="space-y-4 mb-6">
-          <h2 className="text-xl font-semibold">Individual Vendor Orders</h2>
-          
-          {orderSummary.subOrders.map((subOrder: any, index: number) => (
-            <Card key={subOrder.id}>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <Package className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold">Vendor Order #{index + 1}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Order ID: {subOrder.id.slice(0, 8)}...
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="text-right">
-                    <div className="font-semibold">
-                      ${parseFloat(subOrder.totalAmount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                    </div>
-                    {getStatusBadge(subOrder.status)}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-muted-foreground" />
-                    <span>Ordered: {new Date(subOrder.createdAt).toLocaleDateString()}</span>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-muted-foreground" />
-                    <span>Updated: {new Date(subOrder.updatedAt).toLocaleDateString()}</span>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Truck className="w-4 h-4 text-muted-foreground" />
-                    <span>Est. delivery: 5-7 days</span>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex gap-2">
-                  <Button variant="outline" size="sm">
-                    <Eye className="w-4 h-4 mr-2" />
-                    View Details
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Truck className="w-4 h-4 mr-2" />
-                    Track Order
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Next Steps */}
-        <Card>
-          <CardHeader>
-            <CardTitle>What happens next?</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="flex gap-3">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm font-semibold text-blue-600">1</span>
-                </div>
-                <div>
-                  <h4 className="font-medium">Order Confirmation</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Each vendor will receive and confirm your order separately
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm font-semibold text-blue-600">2</span>
-                </div>
-                <div>
-                  <h4 className="font-medium">Preparation & Shipping</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Items will be prepared and shipped independently by each vendor
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm font-semibold text-blue-600">3</span>
-                </div>
-                <div>
-                  <h4 className="font-medium">Tracking Updates</h4>
-                  <p className="text-sm text-muted-foreground">
-                    You'll receive separate tracking information for each shipment
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm font-semibold text-blue-600">4</span>
-                </div>
-                <div>
-                  <h4 className="font-medium">Delivery & Support</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Each vendor will provide their own customer support and warranties
-                  </p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Action Buttons */}
-        <div className="flex justify-center gap-4 mt-8">
-          <Button asChild>
-            <a href="/marketplace">Continue Shopping</a>
-          </Button>
-          <Button variant="outline" asChild>
-            <a href="/buyer-dashboard">View All Orders</a>
-          </Button>
-          <Button variant="outline">
-            <Download className="w-4 h-4 mr-2" />
-            Download Receipt
-          </Button>
         </div>
       </div>
 

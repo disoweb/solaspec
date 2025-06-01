@@ -1,12 +1,20 @@
-
+import { WebSocket } from 'ws';
 import { drizzle } from "drizzle-orm/neon-serverless";
-import { Pool } from "@neondatabase/serverless";
+import { Pool, neonConfig } from "@neondatabase/serverless";
 import { sql } from "drizzle-orm";
 import * as schema from "../shared/schema";
 import bcrypt from "bcryptjs";
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-const db = drizzle({ client: pool, schema });
+// Configure WebSocket for Neon
+neonConfig.webSocketConstructor = WebSocket;
+
+// Initialize pool
+const pool = new Pool({ 
+  connectionString: process.env.DATABASE_URL,
+  ssl: true // Ensure SSL is enabled
+});
+
+const db = drizzle(pool, { schema });
 
 async function migrate() {
   console.log("Starting database migration...");
@@ -626,8 +634,11 @@ async function migrate() {
 }
 
 // Run migration if this file is executed directly
-if (require.main === module) {
-  migrate().catch(console.error);
+if (import.meta.url.endsWith(process.argv[1])) {
+  migrate().catch((err) => {
+    console.error("Migration failed:", err);
+    process.exit(1);
+  });
 }
 
 export { migrate };
